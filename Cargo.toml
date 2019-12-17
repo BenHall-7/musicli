@@ -1,0 +1,18 @@
+[package]
+name = "musicli"
+version = "0.1.0"
+authors = ["BenHall-7 <benjaminjahall@gmail.com>"]
+edition = "2018"
+
+[lib]
+name = "musiclib"
+path = "src/lib/lib.rs"
+
+[[bin]]
+name = "musicli"
+path = "src/main/main.rs"
+
+[dependencies]
+midir = "^0.5"
+crossterm = "^0.13"
+tui = { version = "^0.6", default-features = false, features = ['crossterm'] }
