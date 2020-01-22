@@ -14,5 +14,6 @@ path = "src/main/main.rs"
 
 [dependencies]
 midir = "^0.5"
+midly = "^0.3.0"
 crossterm = "^0.13"
 tui = { version = "^0.6", default-features = false, features = ['crossterm'] }
