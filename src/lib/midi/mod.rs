@@ -1,4 +1,6 @@
-use std::fmt;
+mod var_length_value;
+
+pub use var_length_value::VarLengthValue;
 
 #[derive(Debug)]
 pub struct File {
@@ -10,20 +12,6 @@ impl File {
     pub fn get_timing(&self) -> Timing {
         self.timing
     }
-
-    // pub fn tracks(&self) -> Vec<&Track> {
-    //     match self.format {
-    //         Format::SingleTrack(ref t) => vec![t],
-    //         Format::MultipleTrack(ref v) => v.iter().map(|t| t).collect(),
-    //     }
-    // }
-
-    // pub fn tracks_mut(&mut self) -> Vec<&mut Track> {
-    //     match self.format {
-    //         Format::SingleTrack(ref mut t) => vec![t],
-    //         Format::MultipleTrack(ref mut v) => v.iter_mut().map(|t| t).collect(),
-    //     }
-    // }
 }
 
 #[derive(Debug)]
@@ -50,7 +38,7 @@ pub enum Timing {
 
 #[derive(Debug)]
 pub struct Track {
-    //u32 len
+    delta_time: VarLengthValue,
     chunks: Vec<TrackEvent>,
 }
 
@@ -62,6 +50,4 @@ pub struct TrackEvent {
 }
 
 #[derive(Debug)]
-pub enum Event {
-    
-}
+pub enum Event {}

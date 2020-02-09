@@ -1,5 +1,5 @@
 use std::io;
-use std::path::{PathBuf, Path};
+use std::path::{Path, PathBuf};
 
 use midly::Smf;
 use tui::backend::{Backend, CrosstermBackend};
@@ -10,27 +10,12 @@ use tui::Terminal;
 
 use musiclib::error::Error;
 
-struct App {
-    pub project: Option<Project>,
-}
-
-struct Project {
-    pub filename: Option<PathBuf>,
-}
-
-enum PlayStatus {
-    Stopped,
-    Playing,
-}
-
 fn main() -> Result<(), Error> {
     let mut terminal = Terminal::new(CrosstermBackend::new())?;
     terminal.clear()?;
 
     let f = std::fs::read("C:/Users/Breakfast/Downloads/Pirate Island(Upgrade).mid")?;
     //let midi = Smf::parse_with_bytemap(raw: &[u8])
-    
-    
 
     //render(&mut terminal)
 

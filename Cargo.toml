@@ -13,7 +13,9 @@ name = "musicli"
 path = "src/main/main.rs"
 
 [dependencies]
+crossterm = "^0.13"
+byteorder = "^1.3"
 midir = "^0.5"
 midly = "^0.3.0"
-crossterm = "^0.13"
+serde = { version = "^1", features = ['derive'] }
 tui = { version = "^0.6", default-features = false, features = ['crossterm'] }
