@@ -1,4 +1,4 @@
-use super::{Timing, Format};
+use super::{Format, Timing};
 
 #[derive(Debug)]
 pub struct File {

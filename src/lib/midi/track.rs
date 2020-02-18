@@ -1,4 +1,4 @@
-use super::{VarLengthValue, TrackEvent};
+use super::{TrackEvent, VarLengthValue};
 
 #[derive(Debug)]
 pub struct Track {
