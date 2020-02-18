@@ -1,4 +1,5 @@
-use crate::utils::{FromStream, SMPTETimecode, ToStream};
+use crate::midi::SMPTETimecode;
+use crate::utils::{FromStream, ToStream};
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use std::io::{Error, ErrorKind, Read, Write};
 
@@ -23,10 +24,7 @@ impl FromStream for Timing {
             let timecode = SMPTETimecode::from(timecode_amount as u32)
                 .or_else(|_| Err(Error::from(ErrorKind::InvalidData)))?;
 
-            Ok(Timing::Real(
-                timecode,
-                (short & 0xff) as u8,
-            ))
+            Ok(Timing::Real(timecode, (short & 0xff) as u8))
         }
     }
 }
@@ -42,7 +40,7 @@ impl ToStream for Timing {
                 writer.write_i8(-(*timecode as i8))?;
                 writer.write_u8(*div)?;
                 Ok(())
-            },
+            }
         }
     }
 }

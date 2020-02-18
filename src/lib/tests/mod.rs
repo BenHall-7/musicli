@@ -34,3 +34,50 @@ fn var_length_value_io() {
         assert_eq!(new_var_value.0, *key);
     }
 }
+
+#[test]
+fn timecode_io_metrical() {
+    use crate::midi::Timing;
+    use crate::utils::{FromStream, ToStream};
+    use std::io::Cursor;
+
+    // writing to stream:
+    let timing = Timing::Metrical(0x3c0);
+    let mut write_stream = Cursor::new(Vec::<u8>::with_capacity(2));
+    timing.to_stream(&mut write_stream).unwrap();
+    assert_eq!(write_stream.into_inner(), vec![0x3_u8, 0xc0_u8]);
+
+    // reading from stream:
+    let mut read_stream = Cursor::new(vec![0x3_u8, 0xc0_u8]);
+    let timing = Timing::from_stream(&mut read_stream).unwrap();
+    let value = if let Timing::Metrical(v) = timing {
+        v
+    } else {
+        panic!();
+    };
+    assert_eq!(value, 0x3c0);
+}
+
+#[test]
+fn timecode_io_smpte() {
+    use crate::midi::{SMPTETimecode, Timing};
+    use crate::utils::{FromStream, ToStream};
+    use std::io::Cursor;
+
+    // writing to stream:
+    let timing = Timing::Real(SMPTETimecode::FPS30, 80);
+    let mut write_stream = Cursor::new(Vec::<u8>::with_capacity(2));
+    timing.to_stream(&mut write_stream).unwrap();
+    assert_eq!(write_stream.into_inner(), vec![0xe2_u8, 0x50_u8]);
+
+    // reading from stream:
+    let mut read_stream = Cursor::new(vec![0xe2_u8, 0x50_u8]);
+    let timing = Timing::from_stream(&mut read_stream).unwrap();
+    let (timecode, div) = if let Timing::Real(tc, d) = timing {
+        (tc, d)
+    } else {
+        panic!();
+    };
+    assert_eq!(timecode, SMPTETimecode::FPS30);
+    assert_eq!(div, 80);
+}
