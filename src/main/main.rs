@@ -1,11 +1,4 @@
-use std::io;
-use std::path::{Path, PathBuf};
-
-use midly::Smf;
-use tui::backend::{Backend, CrosstermBackend};
-use tui::layout::{Constraint, Direction, Layout, Rect};
-use tui::style::{Color, Modifier, Style};
-use tui::widgets::{Block, Borders, Widget};
+use tui::backend::{CrosstermBackend};
 use tui::Terminal;
 
 use musiclib::error::Error;
@@ -14,7 +7,7 @@ fn main() -> Result<(), Error> {
     let mut terminal = Terminal::new(CrosstermBackend::new())?;
     terminal.clear()?;
 
-    let f = std::fs::read("C:/Users/Breakfast/Downloads/Pirate Island(Upgrade).mid")?;
+    //let f = std::fs::read("C:/Users/Breakfast/Downloads/Pirate Island(Upgrade).mid")?;
     //let midi = Smf::parse_with_bytemap(raw: &[u8])
 
     //render(&mut terminal)
