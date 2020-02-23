@@ -1,5 +1,5 @@
-use std::io::{Error, Read};
+use std::io::{Error, Read, Seek};
 
 pub trait FromStream: Sized {
-    fn from_stream<R: Read>(reader: &mut R) -> Result<Self, Error>;
+    fn from_stream<R: Read + Seek>(reader: &mut R) -> Result<Self, Error>;
 }

@@ -2,13 +2,14 @@ use crate::utils::Bounded;
 use crate::utils::FromStream;
 use crate::utils::ToStream;
 use byteorder::{ReadBytesExt, WriteBytesExt};
-use std::io;
+use serde::{Deserialize, Serialize};
+use std::io::{Error, Read, Seek, Write};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize)]
 pub struct VarLengthValue(pub(crate) u32);
 
 impl FromStream for VarLengthValue {
-    fn from_stream<R: io::Read>(reader: &mut R) -> Result<Self, io::Error> {
+    fn from_stream<R: Read + Seek>(reader: &mut R) -> Result<Self, Error> {
         let mut value = 0u32;
         let max_bytes = 4;
         for _ in 0..max_bytes {
@@ -26,7 +27,7 @@ impl FromStream for VarLengthValue {
 }
 
 impl ToStream for VarLengthValue {
-    fn to_stream<W: io::Write>(&self, writer: &mut W) -> Result<(), io::Error> {
+    fn to_stream<W: Write + Seek>(&self, writer: &mut W) -> Result<(), Error> {
         let mut value = self.0;
         // small enough to avoid heap allocation, probably?
         let mut buffer = [0u8; 4];

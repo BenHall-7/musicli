@@ -1,6 +1,7 @@
 use super::Track;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub enum Format {
     SingleTrack(Track),
     // TODO:

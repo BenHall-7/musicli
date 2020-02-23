@@ -1,4 +1,4 @@
-use tui::backend::{CrosstermBackend};
+use tui::backend::CrosstermBackend;
 use tui::Terminal;
 
 use musiclib::error::Error;

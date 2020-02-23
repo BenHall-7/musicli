@@ -1,9 +1,10 @@
 use crate::midi::SMPTETimecode;
 use crate::utils::{FromStream, ToStream};
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
+use serde::{Deserialize, Serialize};
 use std::io::{Error, ErrorKind, Read, Write};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize)]
 pub enum Timing {
     /// Indicates a subdivision of quarter notes into a number of pulses.
     /// This timing is affected by tempo tracks.
