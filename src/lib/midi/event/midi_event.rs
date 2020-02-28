@@ -15,8 +15,10 @@ pub enum MidiEvent {
 }
 
 impl FromStream for MidiEvent {
-    fn from_stream<R: Read + Seek>(reader: &mut R) -> Result<Self, Error> {
-        let first_byte = reader.read_u8()?;
+    type Context = u8;
+
+    fn from_stream<R: Read + Seek>(reader: &mut R, context: &mut u8) -> Result<Self, Error> {
+        let first_byte = *context;
         let event_num = first_byte >> 4;
         let channel = first_byte & 0xf;
         match event_num {

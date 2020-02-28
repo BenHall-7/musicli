@@ -18,7 +18,9 @@ impl File {
 }
 
 impl FromStream for File {
-    fn from_stream<R: Read + Seek>(reader: &mut R) -> Result<Self, Error> {
+    type Context = ();
+
+    fn from_stream<R: Read + Seek>(reader: &mut R, _: &mut ()) -> Result<Self, Error> {
         let mut buf = [0u8; 4];
         reader.read_exact(&mut buf)?;
         assert_eq!(b"MThd", &buf);
@@ -28,17 +30,17 @@ impl FromStream for File {
 
         let format = reader.read_u16::<BigEndian>()?;
         let track_count = reader.read_u16::<BigEndian>()?;
-        let timing = Timing::from_stream(reader)?;
+        let timing = Timing::from_stream(reader, &mut ())?;
 
         match format {
             0 => Ok(File {
-                format: Format::SingleTrack(Track::from_stream(reader)?),
+                format: Format::SingleTrack(Track::from_stream(reader, &mut ())?),
                 timing,
             }),
             1 => {
                 let mut tracks = Vec::<Track>::with_capacity(track_count as usize);
                 for _ in 0..track_count {
-                    tracks.push(Track::from_stream(reader)?);
+                    tracks.push(Track::from_stream(reader, &mut ())?);
                 }
                 Ok(File {
                     format: Format::MultipleTrack(tracks),
@@ -48,7 +50,7 @@ impl FromStream for File {
             2 => {
                 let mut tracks = Vec::<Track>::with_capacity(track_count as usize);
                 for _ in 0..track_count {
-                    tracks.push(Track::from_stream(reader)?);
+                    tracks.push(Track::from_stream(reader, &mut ())?);
                 }
                 Ok(File {
                     format: Format::ParallelTrack(tracks),

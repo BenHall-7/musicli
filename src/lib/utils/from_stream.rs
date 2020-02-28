@@ -1,5 +1,10 @@
 use std::io::{Error, Read, Seek};
 
 pub trait FromStream: Sized {
-    fn from_stream<R: Read + Seek>(reader: &mut R) -> Result<Self, Error>;
+    type Context;
+
+    fn from_stream<R: Read + Seek>(
+        reader: &mut R,
+        context: &mut Self::Context,
+    ) -> Result<Self, Error>;
 }

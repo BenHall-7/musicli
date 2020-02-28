@@ -1,11 +1,33 @@
-use tui::backend::CrosstermBackend;
-use tui::Terminal;
-
 use musiclib::error::Error;
+use musiclib::midi::File;
+use musiclib::utils::FromStream;
+use serde_yaml::to_string;
+use std::env::args;
+use std::io::Cursor;
+// use tui::backend::CrosstermBackend;
+// use tui::Terminal;
 
 fn main() -> Result<(), Error> {
-    let mut terminal = Terminal::new(CrosstermBackend::new())?;
-    terminal.clear()?;
+    let args: Vec<String> = args().collect();
+    if args.len() > 1 {
+        let filename = &args[1];
+        let mut cursor = Cursor::new(std::fs::read(filename)?);
+        match File::from_stream(&mut cursor, &mut ()) {
+            Ok(midi) => {
+                let yaml = to_string(&midi).unwrap();
+                std::fs::write("output.yml", yaml)?;
+                println!("Done!");
+            }
+            Err(e) => {
+                println!("{}", e);
+            }
+        }
+    } else {
+        println!("No args. Needed: <input file>");
+    }
+
+    // let mut terminal = Terminal::new(CrosstermBackend::new())?;
+    // terminal.clear()?;
 
     //let f = std::fs::read("C:/Users/Breakfast/Downloads/Pirate Island(Upgrade).mid")?;
     //let midi = Smf::parse_with_bytemap(raw: &[u8])

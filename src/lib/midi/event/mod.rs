@@ -10,7 +10,7 @@ use super::VarLengthValue;
 use crate::utils::{FromStream, ToStream};
 use byteorder::{ReadBytesExt, WriteBytesExt};
 use serde::{Deserialize, Serialize};
-use std::io::{Error, Read, Seek, SeekFrom, Write};
+use std::io::{Error, ErrorKind, Read, Seek, SeekFrom, Write};
 
 /// A top-level event struct in a Track, containing a delta time and one of 3 event types
 #[derive(Debug, Deserialize, Serialize)]
@@ -29,9 +29,14 @@ pub enum EventType {
 }
 
 impl FromStream for Event {
-    fn from_stream<R: Read + Seek>(reader: &mut R) -> Result<Self, Error> {
-        let delta = VarLengthValue::from_stream(reader)?;
-        let event_type = EventType::from_stream(reader)?;
+    type Context = Option<u8>;
+
+    fn from_stream<R: Read + Seek>(
+        reader: &mut R,
+        context: &mut Self::Context,
+    ) -> Result<Self, Error> {
+        let delta = VarLengthValue::from_stream(reader, &mut ())?;
+        let event_type = EventType::from_stream(reader, context)?;
         Ok(Event { delta, event_type })
     }
 }
@@ -45,21 +50,38 @@ impl ToStream for Event {
 }
 
 impl FromStream for EventType {
-    fn from_stream<R: Read + Seek>(reader: &mut R) -> Result<Self, Error> {
-        let event_num = reader.read_u8()?;
-        reader.seek(SeekFrom::Current(-1))?;
-        match event_num {
+    type Context = Option<u8>;
+
+    fn from_stream<R: Read + Seek>(
+        reader: &mut R,
+        event_num: &mut Option<u8>,
+    ) -> Result<Self, Error> {
+        let mut next_event = reader.read_u8()?;
+        if next_event < 0x80 {
+            next_event = event_num.unwrap();
+            reader.seek(SeekFrom::Current(-1))?;
+        }
+
+        match next_event {
+            0x00..=0x7f => unreachable!(),
             0x80..=0xef => {
-                let midi_event = MidiEvent::from_stream(reader)?;
+                *event_num = Some(next_event);
+                // TODO: This is ugly
+                let midi_event = MidiEvent::from_stream(
+                    reader,
+                    event_num
+                        .as_mut()
+                        .ok_or(ErrorKind::InvalidData)
+                        .map(|x| &mut *x)?,
+                )?;
                 Ok(Self::Midi(midi_event))
             }
             _ => {
                 reader.read_u8()?;
-                let len = VarLengthValue::from_stream(reader)?;
-                let mut bytes = Vec::with_capacity(len.0 as usize);
-                // TODO: does this actually work up to the capacity?
+                let len = VarLengthValue::from_stream(reader, &mut ())?;
+                let mut bytes = vec![0u8; len.0 as usize];
                 reader.read_exact(&mut bytes)?;
-                Ok(Self::Unsupported(event_num, bytes))
+                Ok(Self::Unsupported(next_event, bytes))
             }
         }
     }
