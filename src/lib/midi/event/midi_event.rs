@@ -5,13 +5,39 @@ use std::io::{Error, Read, Seek, Write};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub enum MidiEvent {
-    NoteOff(u8, u8, u8),
-    NoteOn(u8, u8, u8),
-    NotePressure(u8, u8, u8),
-    Controller(u8, u8, u8),
-    Program(u8, u8),
-    Pressure(u8, u8),
-    PitchBend(u8, u8, u8),
+    NoteOff {
+        channel: u8,
+        note: u8,
+        velocity: u8,
+    },
+    NoteOn {
+        channel: u8,
+        note: u8,
+        velocity: u8,
+    },
+    NotePressure {
+        channel: u8,
+        note: u8,
+        pressure: u8,
+    },
+    Controller {
+        channel: u8,
+        controller: u8,
+        value: u8,
+    },
+    Program {
+        channel: u8,
+        program: u8,
+    },
+    Pressure {
+        channel: u8,
+        pressure: u8,
+    },
+    PitchBend {
+        channel: u8,
+        lsb: u8,
+        msb: u8,
+    },
 }
 
 impl FromStream for MidiEvent {
@@ -22,25 +48,39 @@ impl FromStream for MidiEvent {
         let event_num = first_byte >> 4;
         let channel = first_byte & 0xf;
         match event_num {
-            0x8 => Ok(Self::NoteOff(channel, reader.read_u8()?, reader.read_u8()?)),
-            0x9 => Ok(Self::NoteOn(channel, reader.read_u8()?, reader.read_u8()?)),
-            0xa => Ok(Self::NotePressure(
+            0x8 => Ok(Self::NoteOff {
                 channel,
-                reader.read_u8()?,
-                reader.read_u8()?,
-            )),
-            0xb => Ok(Self::Controller(
+                note: reader.read_u8()?,
+                velocity: reader.read_u8()?,
+            }),
+            0x9 => Ok(Self::NoteOn {
                 channel,
-                reader.read_u8()?,
-                reader.read_u8()?,
-            )),
-            0xc => Ok(Self::Program(channel, reader.read_u8()?)),
-            0xd => Ok(Self::Pressure(channel, reader.read_u8()?)),
-            0xe => Ok(Self::PitchBend(
+                note: reader.read_u8()?,
+                velocity: reader.read_u8()?,
+            }),
+            0xa => Ok(Self::NotePressure {
                 channel,
-                reader.read_u8()?,
-                reader.read_u8()?,
-            )),
+                note: reader.read_u8()?,
+                pressure: reader.read_u8()?,
+            }),
+            0xb => Ok(Self::Controller {
+                channel,
+                controller: reader.read_u8()?,
+                value: reader.read_u8()?,
+            }),
+            0xc => Ok(Self::Program {
+                channel,
+                program: reader.read_u8()?,
+            }),
+            0xd => Ok(Self::Pressure {
+                channel,
+                pressure: reader.read_u8()?,
+            }),
+            0xe => Ok(Self::PitchBend {
+                channel,
+                lsb: reader.read_u8()?,
+                msb: reader.read_u8()?,
+            }),
             _ => unreachable!(),
         }
     }
@@ -49,38 +89,54 @@ impl FromStream for MidiEvent {
 impl ToStream for MidiEvent {
     fn to_stream<W: Write + Seek>(&self, writer: &mut W) -> Result<(), Error> {
         match self {
-            Self::NoteOff(a, b, c) => {
-                writer.write_u8(0x80 | (a & 0xf))?;
-                writer.write_u8(*b)?;
-                writer.write_u8(*c)?;
+            Self::NoteOff {
+                channel,
+                note,
+                velocity,
+            } => {
+                writer.write_u8(0x80 | (channel & 0xf))?;
+                writer.write_u8(*note)?;
+                writer.write_u8(*velocity)?;
             }
-            Self::NoteOn(a, b, c) => {
-                writer.write_u8(0x90 | (a & 0xf))?;
-                writer.write_u8(*b)?;
-                writer.write_u8(*c)?;
+            Self::NoteOn {
+                channel,
+                note,
+                velocity,
+            } => {
+                writer.write_u8(0x90 | (channel & 0xf))?;
+                writer.write_u8(*note)?;
+                writer.write_u8(*velocity)?;
             }
-            Self::NotePressure(a, b, c) => {
-                writer.write_u8(0xa0 | (a & 0xf))?;
-                writer.write_u8(*b)?;
-                writer.write_u8(*c)?;
+            Self::NotePressure {
+                channel,
+                note,
+                pressure,
+            } => {
+                writer.write_u8(0xa0 | (channel & 0xf))?;
+                writer.write_u8(*note)?;
+                writer.write_u8(*pressure)?;
             }
-            Self::Controller(a, b, c) => {
-                writer.write_u8(0xb0 | (a & 0xf))?;
-                writer.write_u8(*b)?;
-                writer.write_u8(*c)?;
+            Self::Controller {
+                channel,
+                controller,
+                value,
+            } => {
+                writer.write_u8(0xb0 | (channel & 0xf))?;
+                writer.write_u8(*controller)?;
+                writer.write_u8(*value)?;
             }
-            Self::Program(a, b) => {
-                writer.write_u8(0xc0 | (a & 0xf))?;
-                writer.write_u8(*b)?;
+            Self::Program { channel, program } => {
+                writer.write_u8(0xc0 | (channel & 0xf))?;
+                writer.write_u8(*program)?;
             }
-            Self::Pressure(a, b) => {
-                writer.write_u8(0xd0 | (a & 0xf))?;
-                writer.write_u8(*b)?;
+            Self::Pressure { channel, pressure } => {
+                writer.write_u8(0xd0 | (channel & 0xf))?;
+                writer.write_u8(*pressure)?;
             }
-            Self::PitchBend(a, b, c) => {
-                writer.write_u8(0xe0 | (a & 0xf))?;
-                writer.write_u8(*b)?;
-                writer.write_u8(*c)?;
+            Self::PitchBend { channel, lsb, msb } => {
+                writer.write_u8(0xe0 | (channel & 0xf))?;
+                writer.write_u8(*lsb)?;
+                writer.write_u8(*msb)?;
             }
         }
         Ok(())
