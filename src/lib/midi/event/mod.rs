@@ -23,7 +23,7 @@ pub struct Event {
 #[derive(Debug, Deserialize, Serialize)]
 pub enum EventType {
     Midi(MidiEvent),
-    // Meta(),
+    Meta(MetaEvent),
     // SysEx(),
     Unsupported(u8, Vec<u8>),
 }
@@ -76,6 +76,9 @@ impl FromStream for EventType {
                 )?;
                 Ok(Self::Midi(midi_event))
             }
+            0xff => {
+                Ok(Self::Meta(MetaEvent::from_stream(reader, &mut ())?))
+            }
             _ => {
                 reader.read_u8()?;
                 let len = VarLengthValue::from_stream(reader, &mut ())?;
@@ -93,6 +96,7 @@ impl ToStream for EventType {
             Self::Midi(midi) => {
                 midi.to_stream(writer)?;
             }
+            Self::Meta(_) => unimplemented!(),
             Self::Unsupported(num, vec) => {
                 writer.write_u8(*num)?;
                 VarLengthValue::from(vec.len() as u32).to_stream(writer)?;
