@@ -9,9 +9,7 @@ use std::io::{Error, Read, Seek, Write};
 pub struct VarLengthValue(pub(crate) u32);
 
 impl FromStream for VarLengthValue {
-    type Context = ();
-
-    fn from_stream<R: Read + Seek>(reader: &mut R, _: &mut ()) -> Result<Self, Error> {
+    fn from_stream<R: Read + Seek>(reader: &mut R) -> Result<Self, Error> {
         let mut value = 0u32;
         let max_bytes = 4;
         for _ in 0..max_bytes {

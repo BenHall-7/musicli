@@ -30,7 +30,7 @@ fn var_length_value_io() {
 
         // reading from stream:
         let mut read_stream = Cursor::new(value);
-        let new_var_value = VarLengthValue::from_stream(&mut read_stream, &mut ()).unwrap();
+        let new_var_value = VarLengthValue::from_stream(&mut read_stream).unwrap();
         assert_eq!(new_var_value.0, *key);
     }
 }
@@ -49,7 +49,7 @@ fn timecode_io_metrical() {
 
     // reading from stream:
     let mut read_stream = Cursor::new(vec![0x3_u8, 0xc0_u8]);
-    let timing = Timing::from_stream(&mut read_stream, &mut ()).unwrap();
+    let timing = Timing::from_stream(&mut read_stream).unwrap();
     let value = if let Timing::Metrical(v) = timing {
         v
     } else {
@@ -72,7 +72,7 @@ fn timecode_io_smpte() {
 
     // reading from stream:
     let mut read_stream = Cursor::new(vec![0xe2_u8, 0x50_u8]);
-    let timing = Timing::from_stream(&mut read_stream, &mut ()).unwrap();
+    let timing = Timing::from_stream(&mut read_stream).unwrap();
     let (timecode, div) = if let Timing::Real(tc, d) = timing {
         (tc, d)
     } else {

@@ -1,4 +1,4 @@
-use crate::utils::{FromStream, ToStream};
+use crate::utils::{FromStreamContext, ToStream};
 use byteorder::{ReadBytesExt, WriteBytesExt};
 use serde::{Deserialize, Serialize};
 use std::io::{Error, Read, Seek, Write};
@@ -40,10 +40,10 @@ pub enum MidiEvent {
     },
 }
 
-impl FromStream for MidiEvent {
+impl FromStreamContext for MidiEvent {
     type Context = u8;
 
-    fn from_stream<R: Read + Seek>(reader: &mut R, context: &mut u8) -> Result<Self, Error> {
+    fn from_stream_context<R: Read + Seek>(reader: &mut R, context: &mut u8) -> Result<Self, Error> {
         let first_byte = *context;
         let event_num = first_byte >> 4;
         let channel = first_byte & 0xf;

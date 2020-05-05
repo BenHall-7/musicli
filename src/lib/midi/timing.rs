@@ -16,9 +16,7 @@ pub enum Timing {
 }
 
 impl FromStream for Timing {
-    type Context = ();
-
-    fn from_stream<R: Read>(reader: &mut R, _: &mut ()) -> Result<Self, Error> {
+    fn from_stream<R: Read>(reader: &mut R) -> Result<Self, Error> {
         let short = reader.read_i16::<BigEndian>()?;
         if short > 0 {
             Ok(Timing::Metrical(short as u16))

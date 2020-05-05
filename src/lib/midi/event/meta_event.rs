@@ -39,11 +39,17 @@ pub enum MetaEvent {
 }
 
 impl FromStream for MetaEvent {
-    type Context = ();
-
-    fn from_stream<R: Read + Seek>(reader: &mut R, _: &mut ()) -> Result<Self, Error> {
+    fn from_stream<R: Read + Seek>(reader: &mut R) -> Result<Self, Error> {
         let meta_type = reader.read_u8()?;
-        let size = VarLengthValue::from_stream(reader, &mut ())?;
+        let size = VarLengthValue::from_stream(reader)?;
+
+        macro_rules! read_string {
+            ($event:path) => {{
+                let mut buffer = vec![0u8; size.0 as usize];
+                reader.read_exact(&mut buffer)?;
+                Ok($event(String::from_utf8(buffer).unwrap()))
+            }};
+        }
 
         match meta_type {
             0x00 => {
@@ -55,51 +61,15 @@ impl FromStream for MetaEvent {
                     Err(Error::from(ErrorKind::InvalidData))
                 }
             }
-            0x01 => {
-                let mut buffer = vec![0u8; size.0 as usize];
-                reader.read_exact(&mut buffer)?;
-                Ok(MetaEvent::Text(String::from_utf8(buffer).unwrap()))
-            }
-            0x02 => {
-                let mut buffer = vec![0u8; size.0 as usize];
-                reader.read_exact(&mut buffer)?;
-                Ok(MetaEvent::Copyright(String::from_utf8(buffer).unwrap()))
-            }
-            0x03 => {
-                let mut buffer = vec![0u8; size.0 as usize];
-                reader.read_exact(&mut buffer)?;
-                Ok(MetaEvent::TrackName(String::from_utf8(buffer).unwrap()))
-            }
-            0x04 => {
-                let mut buffer = vec![0u8; size.0 as usize];
-                reader.read_exact(&mut buffer)?;
-                Ok(MetaEvent::Instrument(String::from_utf8(buffer).unwrap()))
-            }
-            0x05 => {
-                let mut buffer = vec![0u8; size.0 as usize];
-                reader.read_exact(&mut buffer)?;
-                Ok(MetaEvent::Lyric(String::from_utf8(buffer).unwrap()))
-            }
-            0x06 => {
-                let mut buffer = vec![0u8; size.0 as usize];
-                reader.read_exact(&mut buffer)?;
-                Ok(MetaEvent::Marker(String::from_utf8(buffer).unwrap()))
-            }
-            0x07 => {
-                let mut buffer = vec![0u8; size.0 as usize];
-                reader.read_exact(&mut buffer)?;
-                Ok(MetaEvent::CuePoint(String::from_utf8(buffer).unwrap()))
-            }
-            0x08 => {
-                let mut buffer = vec![0u8; size.0 as usize];
-                reader.read_exact(&mut buffer)?;
-                Ok(MetaEvent::ProgramName(String::from_utf8(buffer).unwrap()))
-            }
-            0x09 => {
-                let mut buffer = vec![0u8; size.0 as usize];
-                reader.read_exact(&mut buffer)?;
-                Ok(MetaEvent::DeviceName(String::from_utf8(buffer).unwrap()))
-            }
+            0x01 => read_string!(MetaEvent::Text),
+            0x02 => read_string!(MetaEvent::Copyright),
+            0x03 => read_string!(MetaEvent::TrackName),
+            0x04 => read_string!(MetaEvent::Instrument),
+            0x05 => read_string!(MetaEvent::Lyric),
+            0x06 => read_string!(MetaEvent::Marker),
+            0x07 => read_string!(MetaEvent::CuePoint),
+            0x08 => read_string!(MetaEvent::ProgramName),
+            0x09 => read_string!(MetaEvent::DeviceName),
             0x20 => {
                 assert_eq!(size.0, 1);
                 Ok(MetaEvent::MidiChannelPrefix(reader.read_u8()?))

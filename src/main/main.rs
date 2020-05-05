@@ -12,7 +12,7 @@ fn main() -> Result<(), Error> {
     if args.len() > 1 {
         let filename = &args[1];
         let mut cursor = Cursor::new(std::fs::read(filename)?);
-        match File::from_stream(&mut cursor, &mut ()) {
+        match File::from_stream(&mut cursor) {
             Ok(midi) => {
                 let yaml = to_string(&midi).unwrap();
                 std::fs::write("output.yml", yaml)?;
