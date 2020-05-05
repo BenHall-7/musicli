@@ -58,7 +58,7 @@ impl FromStreamContext for EventType {
     ) -> Result<Self, Error> {
         let mut next_event = reader.read_u8()?;
         if next_event < 0x80 {
-            next_event = event_num.unwrap();
+            next_event = event_num.expect("Unexpected running event");
             reader.seek(SeekFrom::Current(-1))?;
         }
 

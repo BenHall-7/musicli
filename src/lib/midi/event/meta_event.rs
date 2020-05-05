@@ -58,7 +58,7 @@ impl FromStream for MetaEvent {
             ($event:path) => {{
                 let mut buffer = vec![0u8; size.0 as usize];
                 reader.read_exact(&mut buffer)?;
-                Ok($event(String::from_utf8(buffer).unwrap()))
+                Ok($event(String::from_utf8(buffer).expect("unable to read bytes as utf-8")))
             }};
         }
 

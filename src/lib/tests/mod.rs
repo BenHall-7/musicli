@@ -5,7 +5,7 @@ fn var_length_value_io() {
     use crate::utils::ToStream;
     use std::io::Cursor;
 
-    let key_values: Vec<(u32, Vec<u8>)> = vec![
+    let key_values = vec![
         (0x0000_0000, vec![0x00]),
         (0x0000_0040, vec![0x40]),
         (0x0000_007F, vec![0x7F]),
@@ -23,7 +23,7 @@ fn var_length_value_io() {
     for (key, value) in key_values.iter() {
         // writing to stream:
         let var_value = VarLengthValue::from(*key);
-        let mut write_stream = Cursor::new(Vec::<u8>::with_capacity(4));
+        let mut write_stream = Cursor::new(Vec::with_capacity(4));
         var_value.to_stream(&mut write_stream).unwrap();
         let actual = write_stream.into_inner();
         assert_eq!(&actual, value);
@@ -43,19 +43,19 @@ fn timecode_io_metrical() {
 
     // writing to stream:
     let timing = Timing::Metrical(0x3c0);
-    let mut write_stream = Cursor::new(Vec::<u8>::with_capacity(2));
+    let mut write_stream = Cursor::new(Vec::with_capacity(2));
     timing.to_stream(&mut write_stream).unwrap();
-    assert_eq!(write_stream.into_inner(), vec![0x3_u8, 0xc0_u8]);
+    assert_eq!(write_stream.into_inner(), vec![0x3, 0xc0]);
 
     // reading from stream:
-    let mut read_stream = Cursor::new(vec![0x3_u8, 0xc0_u8]);
+    let mut read_stream = Cursor::new(vec![0x3, 0xc0]);
     let timing = Timing::from_stream(&mut read_stream).unwrap();
-    let value = if let Timing::Metrical(v) = timing {
-        v
+    if let Timing::Metrical(value) = timing {
+        assert_eq!(value, 0x3c0);
     } else {
         panic!();
     };
-    assert_eq!(value, 0x3c0);
+    
 }
 
 #[test]
@@ -66,18 +66,17 @@ fn timecode_io_smpte() {
 
     // writing to stream:
     let timing = Timing::Real(SMPTETimecode::FPS30, 80);
-    let mut write_stream = Cursor::new(Vec::<u8>::with_capacity(2));
+    let mut write_stream = Cursor::new(Vec::with_capacity(2));
     timing.to_stream(&mut write_stream).unwrap();
-    assert_eq!(write_stream.into_inner(), vec![0xe2_u8, 0x50_u8]);
+    assert_eq!(write_stream.into_inner(), vec![0xe2, 0x50]);
 
     // reading from stream:
-    let mut read_stream = Cursor::new(vec![0xe2_u8, 0x50_u8]);
+    let mut read_stream = Cursor::new(vec![0xe2, 0x50]);
     let timing = Timing::from_stream(&mut read_stream).unwrap();
-    let (timecode, div) = if let Timing::Real(tc, d) = timing {
-        (tc, d)
+    if let Timing::Real(timecode, div) = timing {
+        assert_eq!(timecode, SMPTETimecode::FPS30);
+        assert_eq!(div, 80);
     } else {
         panic!();
     };
-    assert_eq!(timecode, SMPTETimecode::FPS30);
-    assert_eq!(div, 80);
 }

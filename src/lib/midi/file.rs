@@ -36,7 +36,7 @@ impl FromStream for File {
                 timing,
             }),
             1 => {
-                let mut tracks = Vec::<Track>::with_capacity(track_count as usize);
+                let mut tracks = Vec::with_capacity(track_count as usize);
                 for _ in 0..track_count {
                     tracks.push(Track::from_stream(reader)?);
                 }
@@ -46,7 +46,7 @@ impl FromStream for File {
                 })
             }
             2 => {
-                let mut tracks = Vec::<Track>::with_capacity(track_count as usize);
+                let mut tracks = Vec::with_capacity(track_count as usize);
                 for _ in 0..track_count {
                     tracks.push(Track::from_stream(reader)?);
                 }
