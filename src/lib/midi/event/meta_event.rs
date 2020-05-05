@@ -1,6 +1,6 @@
-use crate::utils::{FromStream, ToStream};
 use crate::midi::VarLengthValue;
-use byteorder::{ReadBytesExt, WriteBytesExt, BigEndian};
+use crate::utils::{FromStream, ToStream};
+use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use serde::{Deserialize, Serialize};
 use std::io::{Error, ErrorKind, Read, Seek, SeekFrom, Write};
 
@@ -23,9 +23,17 @@ pub enum MetaEvent {
     // 0x2f
     EndOfTrack,
     // 0x51
-    Tempo{ms_per_beat: u32},
+    Tempo {
+        ms_per_beat: u32,
+    },
     // 0x54
-    SMPTEOffset{hr: u8, mn: u8,se: u8,fr: u8, ff:u8},
+    SMPTEOffset {
+        hr: u8,
+        mn: u8,
+        se: u8,
+        fr: u8,
+        ff: u8,
+    },
     // 0x58
     TimeSignature {
         numerator: u8,
@@ -33,7 +41,10 @@ pub enum MetaEvent {
         clocks_per_metronome: u8,
         something: u8,
     },
-    KeySignature{sf: i8,mi: u8},
+    KeySignature {
+        sf: i8,
+        mi: u8,
+    },
 
     Unsupported(u8, Vec<u8>),
 }
@@ -56,7 +67,9 @@ impl FromStream for MetaEvent {
                 if size.0 == 0 {
                     Ok(MetaEvent::SequenceNumber(None))
                 } else if size.0 == 2 {
-                    Ok(MetaEvent::SequenceNumber(Some(reader.read_u16::<BigEndian>()?)))
+                    Ok(MetaEvent::SequenceNumber(Some(
+                        reader.read_u16::<BigEndian>()?,
+                    )))
                 } else {
                     Err(Error::from(ErrorKind::InvalidData))
                 }
@@ -84,12 +97,10 @@ impl FromStream for MetaEvent {
             }
             0x51 => {
                 assert_eq!(size.0, 3);
-                Ok(MetaEvent::Tempo{
-                    ms_per_beat: (
-                        (reader.read_u8()? as u32) << 16
+                Ok(MetaEvent::Tempo {
+                    ms_per_beat: ((reader.read_u8()? as u32) << 16
                         | (reader.read_u8()? as u32) << 8
-                        | (reader.read_u8()? as u32)
-                    )
+                        | (reader.read_u8()? as u32)),
                 })
             }
             0x54 => {

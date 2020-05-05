@@ -43,7 +43,10 @@ pub enum MidiEvent {
 impl FromStreamContext for MidiEvent {
     type Context = u8;
 
-    fn from_stream_context<R: Read + Seek>(reader: &mut R, context: &mut u8) -> Result<Self, Error> {
+    fn from_stream_context<R: Read + Seek>(
+        reader: &mut R,
+        context: &mut u8,
+    ) -> Result<Self, Error> {
         let first_byte = *context;
         let event_num = first_byte >> 4;
         let channel = first_byte & 0xf;

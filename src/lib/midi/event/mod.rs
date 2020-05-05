@@ -7,7 +7,7 @@ pub use midi_event::*;
 pub use sysex_event::*;
 
 use super::VarLengthValue;
-use crate::utils::{FromStreamContext, FromStream, ToStream};
+use crate::utils::{FromStream, FromStreamContext, ToStream};
 use byteorder::{ReadBytesExt, WriteBytesExt};
 use serde::{Deserialize, Serialize};
 use std::io::{Error, ErrorKind, Read, Seek, SeekFrom, Write};
@@ -76,9 +76,7 @@ impl FromStreamContext for EventType {
                 )?;
                 Ok(Self::Midi(midi_event))
             }
-            0xff => {
-                Ok(Self::Meta(MetaEvent::from_stream(reader)?))
-            }
+            0xff => Ok(Self::Meta(MetaEvent::from_stream(reader)?)),
             _ => {
                 reader.read_u8()?;
                 let len = VarLengthValue::from_stream(reader)?;
