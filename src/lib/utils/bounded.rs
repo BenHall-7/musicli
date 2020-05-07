@@ -5,7 +5,7 @@ where
     const MIN: T;
     const MAX: T;
 
-    fn clamp(value: T) -> T {
+    fn bounded(value: T) -> T {
         if value > Self::MAX {
             Self::MAX
         } else if value < Self::MIN {

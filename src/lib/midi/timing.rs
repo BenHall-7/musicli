@@ -1,13 +1,14 @@
 use crate::midi::SMPTETimecode;
-use crate::utils::{FromStream, ToStream};
-use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
+use binread::{BinRead, BinReaderExt, BinResult, ReadOptions};
+use binread::Endian::Big;
+use binread::io::{Read, Seek, Error, ErrorKind};
 use serde::{Deserialize, Serialize};
-use std::io::{Error, ErrorKind, Read, Write};
 
+// todo: turn the enum comments back into doc comments when the bug is gone from binread
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize)]
 pub enum Timing {
     /// Indicates a subdivision of quarter notes into a number of pulses.
-    /// This timing is affected by tempo tracks.
+    /// This timing is affected by tempo tracks, because it depends on the time of a quarter note.
     Metrical(u16),
     /// Indicates a subdivision of each second into frames.
     /// A frame is subdivided once again by the second value.
@@ -15,9 +16,12 @@ pub enum Timing {
     Real(SMPTETimecode, u8),
 }
 
-impl FromStream for Timing {
-    fn from_stream<R: Read>(reader: &mut R) -> Result<Self, Error> {
-        let short = reader.read_i16::<BigEndian>()?;
+impl BinRead for Timing {
+    type Args = ();
+
+    fn read_options<R: Read + Seek>(reader: &mut R, _: &ReadOptions, _: ()) -> BinResult<Self> {
+        let short = reader.read_type::<i16>(Big)?;
+        println!("{}", short);
         if short > 0 {
             Ok(Timing::Metrical(short as u16))
         } else {
@@ -30,18 +34,18 @@ impl FromStream for Timing {
     }
 }
 
-impl ToStream for Timing {
-    fn to_stream<W: Write>(&self, writer: &mut W) -> Result<(), Error> {
-        match self {
-            Timing::Metrical(div) => {
-                writer.write_u16::<BigEndian>(div & 0x7fff)?;
-                Ok(())
-            }
-            Timing::Real(timecode, div) => {
-                writer.write_i8(-(*timecode as i8))?;
-                writer.write_u8(*div)?;
-                Ok(())
-            }
-        }
-    }
-}
+// impl ToStream for Timing {
+//     fn to_stream<W: Write>(&self, writer: &mut W) -> Result<(), Error> {
+//         match self {
+//             Timing::Metrical(div) => {
+//                 writer.write_u16::<BigEndian>(div & 0x7fff)?;
+//                 Ok(())
+//             }
+//             Timing::Real(timecode, div) => {
+//                 writer.write_i8(-(*timecode as i8))?;
+//                 writer.write_u8(*div)?;
+//                 Ok(())
+//             }
+//         }
+//     }
+// }

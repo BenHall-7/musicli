@@ -1,8 +1,7 @@
 #[test]
 fn var_length_value_io() {
     use crate::midi::VarLengthValue;
-    use crate::utils::FromStream;
-    use crate::utils::ToStream;
+    use binread::BinRead;
     use std::io::Cursor;
 
     let key_values = vec![
@@ -21,16 +20,16 @@ fn var_length_value_io() {
     ];
 
     for (key, value) in key_values.iter() {
-        // writing to stream:
-        let var_value = VarLengthValue::from(*key);
-        let mut write_stream = Cursor::new(Vec::with_capacity(4));
-        var_value.to_stream(&mut write_stream).unwrap();
-        let actual = write_stream.into_inner();
-        assert_eq!(&actual, value);
+        // // writing to stream:
+        // let var_value = VarLengthValue::from(*key);
+        // let mut write_stream = Cursor::new(Vec::with_capacity(4));
+        // var_value.to_stream(&mut write_stream).unwrap();
+        // let actual = write_stream.into_inner();
+        // assert_eq!(&actual, value);
 
         // reading from stream:
         let mut read_stream = Cursor::new(value);
-        let new_var_value = VarLengthValue::from_stream(&mut read_stream).unwrap();
+        let new_var_value = VarLengthValue::read(&mut read_stream).unwrap();
         assert_eq!(new_var_value.0, *key);
     }
 }
@@ -38,41 +37,40 @@ fn var_length_value_io() {
 #[test]
 fn timecode_io_metrical() {
     use crate::midi::Timing;
-    use crate::utils::{FromStream, ToStream};
+    use binread::BinRead;
     use std::io::Cursor;
 
-    // writing to stream:
-    let timing = Timing::Metrical(0x3c0);
-    let mut write_stream = Cursor::new(Vec::with_capacity(2));
-    timing.to_stream(&mut write_stream).unwrap();
-    assert_eq!(write_stream.into_inner(), vec![0x3, 0xc0]);
+    // // writing to stream:
+    // let timing = Timing::Metrical(0x3c0);
+    // let mut write_stream = Cursor::new(Vec::with_capacity(2));
+    // timing.to_stream(&mut write_stream).unwrap();
+    // assert_eq!(write_stream.into_inner(), vec![0x3, 0xc0]);
 
     // reading from stream:
     let mut read_stream = Cursor::new(vec![0x3, 0xc0]);
-    let timing = Timing::from_stream(&mut read_stream).unwrap();
+    let timing = Timing::read(&mut read_stream).unwrap();
     if let Timing::Metrical(value) = timing {
         assert_eq!(value, 0x3c0);
     } else {
         panic!();
     };
-    
 }
 
 #[test]
 fn timecode_io_smpte() {
     use crate::midi::{SMPTETimecode, Timing};
-    use crate::utils::{FromStream, ToStream};
+    use binread::BinRead;
     use std::io::Cursor;
 
-    // writing to stream:
-    let timing = Timing::Real(SMPTETimecode::FPS30, 80);
-    let mut write_stream = Cursor::new(Vec::with_capacity(2));
-    timing.to_stream(&mut write_stream).unwrap();
-    assert_eq!(write_stream.into_inner(), vec![0xe2, 0x50]);
+    // // writing to stream:
+    // let timing = Timing::Real(SMPTETimecode::FPS30, 80);
+    // let mut write_stream = Cursor::new(Vec::with_capacity(2));
+    // timing.to_stream(&mut write_stream).unwrap();
+    // assert_eq!(write_stream.into_inner(), vec![0xe2, 0x50]);
 
     // reading from stream:
     let mut read_stream = Cursor::new(vec![0xe2, 0x50]);
-    let timing = Timing::from_stream(&mut read_stream).unwrap();
+    let timing = Timing::read(&mut read_stream).unwrap();
     if let Timing::Real(timecode, div) = timing {
         assert_eq!(timecode, SMPTETimecode::FPS30);
         assert_eq!(div, 80);

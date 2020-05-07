@@ -1,7 +1,5 @@
 use serde::{Deserialize, Serialize};
 
-// Could benefit from a macro
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize)]
 pub enum SMPTETimecode {
     FPS24 = 24,
