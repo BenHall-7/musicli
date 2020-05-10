@@ -1,42 +1,60 @@
 use byteorder::{ReadBytesExt, WriteBytesExt};
+use binread::{BinRead, BinResult, ReadOptions};
+use binread::io::{Read, Seek};
 use serde::{Deserialize, Serialize};
-use std::io::{Error, Read, Seek, Write};
 
 #[derive(Debug, Deserialize, Serialize)]
-pub enum MidiEvent {
+pub struct MidiEvent {
+    channel: u8,
+    event_type: MidiEventType,
+}
+
+#[derive(Debug, Deserialize, Serialize, BinRead)]
+#[br(import(event_num: u8))]
+pub enum MidiEventType {
+    #[br(assert(event_num == 0x8))]
     NoteOff {
-        channel: u8,
         note: u8,
         velocity: u8,
     },
+    #[br(assert(event_num == 0x9))]
     NoteOn {
-        channel: u8,
         note: u8,
         velocity: u8,
     },
+    #[br(assert(event_num == 0xa))]
     NotePressure {
-        channel: u8,
         note: u8,
         pressure: u8,
     },
+    #[br(assert(event_num == 0xb))]
     Controller {
-        channel: u8,
         controller: u8,
         value: u8,
     },
+    #[br(assert(event_num == 0xc))]
     Program {
-        channel: u8,
         program: u8,
     },
+    #[br(assert(event_num == 0xd))]
     Pressure {
-        channel: u8,
         pressure: u8,
     },
+    #[br(assert(event_num == 0xe))]
     PitchBend {
-        channel: u8,
         lsb: u8,
         msb: u8,
     },
+}
+
+impl BinRead for MidiEvent {
+    type Args = u8;
+
+    fn read_options<R: Read + Seek>(reader: &mut R, ro: &ReadOptions, status: Self::Args) -> BinResult<Self> {
+        let event_num = status >> 4;
+        let channel = status & 0xf;
+        Ok(Self {channel, event_type: MidiEventType::read_options(reader, ro, (event_num,))?})
+    }
 }
 
 // impl FromStreamContext for MidiEvent {

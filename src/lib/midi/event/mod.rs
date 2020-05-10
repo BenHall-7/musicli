@@ -59,7 +59,7 @@ impl BinRead for EventTypeWithRet {
         match next_event {
             0x00..=0x7f => unreachable!(),
             0x80..=0xef => {
-                let midi_event = MidiEvent::from_stream_context(reader, event_num)?;
+                let midi_event = MidiEvent::read_options(reader, ro, next_event)?;
                 Ok(EventTypeWithRet(EventType::Midi(midi_event), Some(next_event)))
             }
             0xff => {
