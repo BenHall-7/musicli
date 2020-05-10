@@ -63,7 +63,7 @@ impl BinRead for EventTypeWithRet {
                 Ok(EventTypeWithRet(EventType::Midi(midi_event), Some(next_event)))
             }
             0xff => {
-                let meta_event = MetaEvent::from_stream_context(reader)?;
+                let meta_event = MetaEvent::read(reader)?;
                 Ok(EventTypeWithRet(EventType::Meta(meta_event), Some(next_event)))
             }
             _ => {
