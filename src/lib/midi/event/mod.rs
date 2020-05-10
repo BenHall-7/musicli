@@ -8,9 +8,14 @@ pub use sysex_event::*;
 
 use super::VarLengthValue;
 use crate::error::Error;
-use byteorder::{ReadBytesExt, WriteBytesExt};
+use binread::{BinRead, BinReaderExt, BinResult, ReadOptions};
+use binread::io::{Read, Seek, SeekFrom};
+use std::pin::Pin;
+use std::cell::RefMut;
 use serde::{Deserialize, Serialize};
-use std::io::{Read, Seek, SeekFrom, Write};
+
+#[derive(Debug)]
+pub(crate) struct EventWithRet(pub Event, pub Option<u8>);
 
 /// A top-level event struct in a Track, containing a delta time and one of 3 event types
 #[derive(Debug, Deserialize, Serialize)]
@@ -20,6 +25,9 @@ pub struct Event {
     event_type: EventType,
 }
 
+#[derive(Debug)]
+pub(crate) struct EventTypeWithRet(pub EventType, pub Option<u8>);
+
 #[derive(Debug, Deserialize, Serialize)]
 pub enum EventType {
     Midi(MidiEvent),
@@ -28,72 +36,43 @@ pub enum EventType {
     Unsupported(u8, Vec<u8>),
 }
 
-// impl FromStreamContext for Event {
-//     type Context = Option<u8>;
+impl BinRead for EventWithRet {
+    type Args = Option<u8>;
 
-//     fn from_stream_context<R: Read + Seek>(
-//         reader: &mut R,
-//         context: &mut Self::Context,
-//     ) -> Result<Self, Error> {
-//         let delta = VarLengthValue::from_stream(reader)?;
-//         let event_type = EventType::from_stream_context(reader, context)?;
-//         Ok(Event { delta, event_type })
-//     }
-// }
+    fn read_options<R: Read + Seek>(reader: &mut R, ro: &ReadOptions, running_status: Self::Args) -> BinResult<Self> {
+        let delta = VarLengthValue::read(reader)?;
+        let EventTypeWithRet(event_type, ret) = EventTypeWithRet::read_options(reader, ro, running_status)?;
+        Ok(EventWithRet(Event {delta, event_type}, ret))
+    }
+}
 
-// impl ToStream for Event {
-//     fn to_stream<W: Write + Seek>(&self, writer: &mut W) -> Result<(), Error> {
-//         self.delta.to_stream(writer)?;
-//         self.event_type.to_stream(writer)?;
-//         Ok(())
-//     }
-// }
+impl BinRead for EventTypeWithRet {
+    type Args = Option<u8>;
 
-// impl FromStreamContext for EventType {
-//     type Context = Option<u8>;
+    fn read_options<R: Read + Seek>(reader: &mut R, ro: &ReadOptions, running_status: Self::Args) -> BinResult<Self> {
+        let mut next_event = u8::read(reader)?;
+        if next_event < 0x80 {
+            next_event = running_status.expect("Event byte not found, and no running status is set");
+            reader.seek(SeekFrom::Current(-1))?;
+        }
 
-//     fn from_stream_context<R: Read + Seek>(
-//         reader: &mut R,
-//         event_num: &mut Option<u8>,
-//     ) -> Result<Self, Error> {
-//         let mut next_event = reader.read_u8()?;
-//         if next_event < 0x80 {
-//             next_event = event_num.expect("Unexpected event number, no running status");
-//             reader.seek(SeekFrom::Current(-1))?;
-//         }
-
-//         match next_event {
-//             0x00..=0x7f => unreachable!(),
-//             0x80..=0xef => {
-//                 *event_num = Some(next_event);
-//                 let midi_event = MidiEvent::from_stream_context(reader, event_num)?;
-//                 Ok(Self::Midi(midi_event))
-//             }
-//             0xff => Ok(Self::Meta(MetaEvent::from_stream(reader)?)),
-//             _ => {
-//                 reader.read_u8()?;
-//                 let len = VarLengthValue::from_stream(reader)?;
-//                 let mut bytes = vec![0u8; len.0 as usize];
-//                 reader.read_exact(&mut bytes)?;
-//                 Ok(Self::Unsupported(next_event, bytes))
-//             }
-//         }
-//     }
-// }
-
-// impl ToStream for EventType {
-//     fn to_stream<W: Write + Seek>(&self, writer: &mut W) -> Result<(), Error> {
-//         match self {
-//             Self::Midi(midi) => {
-//                 midi.to_stream(writer)?;
-//             }
-//             Self::Meta(_) => unimplemented!(),
-//             Self::Unsupported(num, vec) => {
-//                 writer.write_u8(*num)?;
-//                 VarLengthValue::from(vec.len() as u32).to_stream(writer)?;
-//                 writer.write_all(&vec)?;
-//             }
-//         }
-//         Ok(())
-//     }
-// }
+        match next_event {
+            0x00..=0x7f => unreachable!(),
+            0x80..=0xef => {
+                let midi_event = MidiEvent::from_stream_context(reader, event_num)?;
+                Ok(EventTypeWithRet(EventType::Midi(midi_event), Some(next_event)))
+            }
+            0xff => {
+                let meta_event = MetaEvent::from_stream_context(reader)?;
+                Ok(EventTypeWithRet(EventType::Meta(meta_event), Some(next_event)))
+            }
+            _ => {
+                u8::read(reader)?; // What was this about again?
+                let len = VarLengthValue::read(reader)?;
+                let mut bytes = vec![0u8; len.0 as usize];
+                reader.read_exact(&mut bytes)?;
+                Ok(EventTypeWithRet(EventType::Unsupported(next_event, bytes), running_status))
+            }
+        }
+    }
+}

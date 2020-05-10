@@ -5,11 +5,11 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize, BinRead)]
 pub struct VarLengthValue(
-    #[br(parse_with = from_stream)]
+    #[br(parse_with = read)]
     pub(crate) u32
 );
 
-fn from_stream<R: Read + Seek>(reader: &mut R, _: &ReadOptions, _: ()) -> BinResult<u32> {
+fn read<R: Read + Seek>(reader: &mut R, _: &ReadOptions, _: ()) -> BinResult<u32> {
     let mut value = 0u32;
     let max_bytes = 4;
     for _ in 0..max_bytes {
