@@ -21,7 +21,6 @@ impl BinRead for Timing {
 
     fn read_options<R: Read + Seek>(reader: &mut R, _: &ReadOptions, _: ()) -> BinResult<Self> {
         let short = reader.read_type::<i16>(Big)?;
-        println!("{}", short);
         if short > 0 {
             Ok(Timing::Metrical(short as u16))
         } else {

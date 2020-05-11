@@ -44,55 +44,6 @@ impl BinRead for MidiEvent {
     }
 }
 
-// impl FromStreamContext for MidiEvent {
-//     type Context = u8;
-
-//     fn from_stream_context<R: Read + Seek>(
-//         reader: &mut R,
-//         context: &mut u8,
-//     ) -> Result<Self, Error> {
-//         let first_byte = *context;
-//         let event_num = first_byte >> 4;
-//         let channel = first_byte & 0xf;
-//         match event_num {
-//             0x8 => Ok(Self::NoteOff {
-//                 channel,
-//                 note: reader.read_u8()?,
-//                 velocity: reader.read_u8()?,
-//             }),
-//             0x9 => Ok(Self::NoteOn {
-//                 channel,
-//                 note: reader.read_u8()?,
-//                 velocity: reader.read_u8()?,
-//             }),
-//             0xa => Ok(Self::NotePressure {
-//                 channel,
-//                 note: reader.read_u8()?,
-//                 pressure: reader.read_u8()?,
-//             }),
-//             0xb => Ok(Self::Controller {
-//                 channel,
-//                 controller: reader.read_u8()?,
-//                 value: reader.read_u8()?,
-//             }),
-//             0xc => Ok(Self::Program {
-//                 channel,
-//                 program: reader.read_u8()?,
-//             }),
-//             0xd => Ok(Self::Pressure {
-//                 channel,
-//                 pressure: reader.read_u8()?,
-//             }),
-//             0xe => Ok(Self::PitchBend {
-//                 channel,
-//                 lsb: reader.read_u8()?,
-//                 msb: reader.read_u8()?,
-//             }),
-//             _ => unreachable!(),
-//         }
-//     }
-// }
-
 // impl ToStream for MidiEvent {
 //     fn to_stream<W: Write + Seek>(&self, writer: &mut W) -> Result<(), Error> {
 //         match self {
