@@ -1,13 +1,10 @@
 use crate::utils::Bounded;
-use binread::{BinRead, BinResult, ReadOptions};
 use binread::io::{Read, Seek};
+use binread::{BinRead, BinResult, ReadOptions};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize, BinRead)]
-pub struct VarLengthValue(
-    #[br(parse_with = read)]
-    pub(crate) u32
-);
+pub struct VarLengthValue(#[br(parse_with = read)] pub(crate) u32);
 
 fn read<R: Read + Seek>(reader: &mut R, _: &ReadOptions, _: ()) -> BinResult<u32> {
     let mut value = 0u32;

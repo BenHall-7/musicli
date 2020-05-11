@@ -7,11 +7,8 @@ pub use midi_event::*;
 pub use sysex_event::*;
 
 use super::VarLengthValue;
-use crate::error::Error;
-use binread::{BinRead, BinReaderExt, BinResult, ReadOptions};
 use binread::io::{Read, Seek, SeekFrom};
-use std::pin::Pin;
-use std::cell::RefMut;
+use binread::{BinRead, BinResult, ReadOptions};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug)]
@@ -39,20 +36,30 @@ pub enum EventType {
 impl BinRead for EventWithRet {
     type Args = Option<u8>;
 
-    fn read_options<R: Read + Seek>(reader: &mut R, ro: &ReadOptions, running_status: Self::Args) -> BinResult<Self> {
+    fn read_options<R: Read + Seek>(
+        reader: &mut R,
+        ro: &ReadOptions,
+        running_status: Self::Args,
+    ) -> BinResult<Self> {
         let delta = VarLengthValue::read(reader)?;
-        let EventTypeWithRet(event_type, ret) = EventTypeWithRet::read_options(reader, ro, running_status)?;
-        Ok(EventWithRet(Event {delta, event_type}, ret))
+        let EventTypeWithRet(event_type, ret) =
+            EventTypeWithRet::read_options(reader, ro, running_status)?;
+        Ok(EventWithRet(Event { delta, event_type }, ret))
     }
 }
 
 impl BinRead for EventTypeWithRet {
     type Args = Option<u8>;
 
-    fn read_options<R: Read + Seek>(reader: &mut R, ro: &ReadOptions, running_status: Self::Args) -> BinResult<Self> {
+    fn read_options<R: Read + Seek>(
+        reader: &mut R,
+        ro: &ReadOptions,
+        running_status: Self::Args,
+    ) -> BinResult<Self> {
         let mut next_event = u8::read(reader)?;
         if next_event < 0x80 {
-            next_event = running_status.expect("Event byte not found, and no running status is set");
+            next_event =
+                running_status.expect("Event byte not found, and no running status is set");
             reader.seek(SeekFrom::Current(-1))?;
         }
 
@@ -60,18 +67,27 @@ impl BinRead for EventTypeWithRet {
             0x00..=0x7f => unreachable!(),
             0x80..=0xef => {
                 let midi_event = MidiEvent::read_options(reader, ro, next_event)?;
-                Ok(EventTypeWithRet(EventType::Midi(midi_event), Some(next_event)))
+                Ok(EventTypeWithRet(
+                    EventType::Midi(midi_event),
+                    Some(next_event),
+                ))
             }
             0xff => {
                 let meta_event = MetaEvent::read(reader)?;
-                Ok(EventTypeWithRet(EventType::Meta(meta_event), Some(next_event)))
+                Ok(EventTypeWithRet(
+                    EventType::Meta(meta_event),
+                    Some(next_event),
+                ))
             }
             _ => {
                 u8::read(reader)?; // What was this about again?
                 let len = VarLengthValue::read(reader)?;
                 let mut bytes = vec![0u8; len.0 as usize];
                 reader.read_exact(&mut bytes)?;
-                Ok(EventTypeWithRet(EventType::Unsupported(next_event, bytes), running_status))
+                Ok(EventTypeWithRet(
+                    EventType::Unsupported(next_event, bytes),
+                    running_status,
+                ))
             }
         }
     }

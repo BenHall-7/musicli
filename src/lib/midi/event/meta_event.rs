@@ -1,7 +1,7 @@
 use crate::midi::VarLengthValue;
-use binread::{BinRead, BinReaderExt, BinResult, ReadOptions};
-use binread::Endian::Big;
 use binread::io::{Error, ErrorKind, Read, Seek};
+use binread::Endian::Big;
+use binread::{BinRead, BinReaderExt, BinResult, ReadOptions};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -52,7 +52,7 @@ pub enum MetaEvent {
 impl BinRead for MetaEvent {
     type Args = ();
 
-    fn read_options<R: Read + Seek>(reader: &mut R, ro: &ReadOptions, _: ()) -> BinResult<Self> {
+    fn read_options<R: Read + Seek>(reader: &mut R, _: &ReadOptions, _: ()) -> BinResult<Self> {
         let meta_type = u8::read(reader)?;
         let size = VarLengthValue::read(reader)?;
 
@@ -60,7 +60,9 @@ impl BinRead for MetaEvent {
             ($event:path) => {{
                 let mut buffer = vec![0u8; size.0 as usize];
                 reader.read_exact(&mut buffer)?;
-                Ok($event(String::from_utf8(buffer).expect("unable to read bytes as utf-8")))
+                Ok($event(
+                    String::from_utf8(buffer).expect("unable to read bytes as utf-8"),
+                ))
             }};
         }
 
@@ -73,7 +75,7 @@ impl BinRead for MetaEvent {
                         reader.read_type::<u16>(Big)?,
                     )))
                 } else {
-                    Err(Error::from(ErrorKind::InvalidData))?
+                    Err(Error::from(ErrorKind::InvalidData).into())
                 }
             }
             0x01 => read_string!(MetaEvent::Text),

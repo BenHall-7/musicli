@@ -1,9 +1,7 @@
 use super::event::{Event, EventWithRet};
-use std::pin::Pin;
-use std::cell::{RefCell, RefMut};
-use binread::{BinRead, BinResult, BinReaderExt, ReadOptions};
 use binread::io::{Read, Seek, SeekFrom};
 use binread::Endian::Big;
+use binread::{BinRead, BinReaderExt, BinResult, ReadOptions};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize, BinRead)]

@@ -1,7 +1,7 @@
 use crate::midi::SMPTETimecode;
-use binread::{BinRead, BinReaderExt, BinResult, ReadOptions};
+use binread::io::{Error, ErrorKind, Read, Seek};
 use binread::Endian::Big;
-use binread::io::{Read, Seek, Error, ErrorKind};
+use binread::{BinRead, BinReaderExt, BinResult, ReadOptions};
 use serde::{Deserialize, Serialize};
 
 // todo: turn the enum comments back into doc comments when the bug is gone from binread

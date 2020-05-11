@@ -1,3 +1,4 @@
+use binread::BinRead;
 use musiclib::error::Error;
 use musiclib::midi::File;
 use serde_yaml::to_string;
@@ -7,31 +8,23 @@ use std::io::Cursor;
 // use tui::Terminal;
 
 fn main() -> Result<(), Error> {
-    // let args: Vec<String> = args().collect();
-    // if args.len() > 1 {
-    //     let filename = &args[1];
-    //     let mut cursor = Cursor::new(std::fs::read(filename)?);
-    //     match File::from_stream(&mut cursor) {
-    //         Ok(midi) => {
-    //             let yaml = to_string(&midi).unwrap();
-    //             std::fs::write("output.yml", yaml)?;
-    //             println!("Done!");
-    //         }
-    //         Err(e) => {
-    //             println!("{}", e);
-    //         }
-    //     }
-    // } else {
-    //     println!("No args. Needed: <input file>");
-    // }
-
-    // let mut terminal = Terminal::new(CrosstermBackend::new())?;
-    // terminal.clear()?;
-
-    //let f = std::fs::read("C:/Users/Breakfast/Downloads/Pirate Island(Upgrade).mid")?;
-    //let midi = Smf::parse_with_bytemap(raw: &[u8])
-
-    //render(&mut terminal)
+    let args: Vec<String> = args().collect();
+    if args.len() > 1 {
+        let filename = &args[1];
+        let mut cursor = Cursor::new(std::fs::read(filename)?);
+        match File::read(&mut cursor) {
+            Ok(midi) => {
+                let yaml = to_string(&midi).unwrap();
+                std::fs::write("output.yml", yaml)?;
+                println!("Done!");
+            }
+            Err(e) => {
+                println!("{:?}", e);
+            }
+        }
+    } else {
+        println!("No args. Needed: <input file>");
+    }
 
     Ok(())
 }
