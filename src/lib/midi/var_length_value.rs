@@ -22,32 +22,6 @@ fn read<R: Read + Seek>(reader: &mut R, _: &ReadOptions, _: ()) -> BinResult<u32
     Ok(VarLengthValue::bounded(value))
 }
 
-// impl ToStream for VarLengthValue {
-//     fn to_stream<W: Write + Seek>(&self, writer: &mut W) -> Result<(), Error> {
-//         let mut value = self.0;
-//         // small enough to avoid heap allocation, probably?
-//         let mut buffer = [0u8; 4];
-//         let mut bufferlen = 0;
-//         let mut byte = (value & 0x7f) as u8;
-
-//         for (ind, v) in buffer.iter_mut().enumerate() {
-//             *v = byte;
-//             bufferlen = ind;
-//             value >>= 7;
-//             if value == 0 {
-//                 break;
-//             } else {
-//                 byte = (value & 0x7f) as u8 | 0x80;
-//             }
-//         }
-//         for i in (0..=bufferlen).rev() {
-//             writer.write_u8(buffer[i])?;
-//         }
-
-//         Ok(())
-//     }
-// }
-
 impl From<u32> for VarLengthValue {
     fn from(value: u32) -> VarLengthValue {
         Self(Self::bounded(value))

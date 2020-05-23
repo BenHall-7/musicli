@@ -4,8 +4,6 @@ use musiclib::midi::File;
 use serde_yaml::to_string;
 use std::env::args;
 use std::io::Cursor;
-// use tui::backend::CrosstermBackend;
-// use tui::Terminal;
 
 fn main() -> Result<(), Error> {
     let args: Vec<String> = args().collect();
@@ -28,21 +26,3 @@ fn main() -> Result<(), Error> {
 
     Ok(())
 }
-
-// fn render<B: Backend>(terminal: &mut Terminal<B>) -> Result<(), Error> {
-//     terminal.draw(|mut frame| {
-//         let size = frame.size();
-//         let chunks = Layout::default()
-//             .direction(Direction::Horizontal)
-//             .constraints([
-//                 Constraint::Percentage(50),
-//                 Constraint::Percentage(50),
-//             ].as_ref())
-//             .split(size);
-//         Block::default()
-//             .title("test")
-//             .borders(Borders::ALL)
-//             .render(&mut frame, chunks[1]);
-//     })?;
-//     Ok(())
-// }

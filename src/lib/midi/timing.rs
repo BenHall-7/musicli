@@ -32,19 +32,3 @@ impl BinRead for Timing {
         }
     }
 }
-
-// impl ToStream for Timing {
-//     fn to_stream<W: Write>(&self, writer: &mut W) -> Result<(), Error> {
-//         match self {
-//             Timing::Metrical(div) => {
-//                 writer.write_u16::<BigEndian>(div & 0x7fff)?;
-//                 Ok(())
-//             }
-//             Timing::Real(timecode, div) => {
-//                 writer.write_i8(-(*timecode as i8))?;
-//                 writer.write_u8(*div)?;
-//                 Ok(())
-//             }
-//         }
-//     }
-// }
