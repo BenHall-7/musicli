@@ -73,14 +73,15 @@ impl BinRead for EventTypeWithRet {
                 ))
             }
             0xff => {
+                println!("BEGIN READ META. Position = 0x{:x}", reader.seek(SeekFrom::Current(0))?);
                 let meta_event = MetaEvent::read(reader)?;
+                println!("END READ META. Position = 0x{:x}", reader.seek(SeekFrom::Current(0))?);
                 Ok(EventTypeWithRet(
                     EventType::Meta(meta_event),
                     Some(next_event),
                 ))
             }
             _ => {
-                u8::read(reader)?; // What was this about again?
                 let len = VarLengthValue::read(reader)?;
                 let mut bytes = vec![0u8; len.0 as usize];
                 reader.read_exact(&mut bytes)?;

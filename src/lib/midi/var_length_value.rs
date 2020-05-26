@@ -1,5 +1,5 @@
 use crate::utils::Bounded;
-use binread::io::{Read, Seek};
+use binread::io::{Read, Seek, SeekFrom};
 use binread::{BinRead, BinResult, ReadOptions};
 use serde::{Deserialize, Serialize};
 
@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 pub struct VarLengthValue(#[br(parse_with = read)] pub(crate) u32);
 
 fn read<R: Read + Seek>(reader: &mut R, _: &ReadOptions, _: ()) -> BinResult<u32> {
+    println!("Current location: 0x{:x}", reader.seek(SeekFrom::Current(0))?);
     let mut value = 0u32;
     let max_bytes = 4;
     for _ in 0..max_bytes {
@@ -25,6 +26,12 @@ fn read<R: Read + Seek>(reader: &mut R, _: &ReadOptions, _: ()) -> BinResult<u32
 impl From<u32> for VarLengthValue {
     fn from(value: u32) -> VarLengthValue {
         Self(Self::bounded(value))
+    }
+}
+
+impl Into<u32> for VarLengthValue {
+    fn into(self) -> u32 {
+        self.0
     }
 }
 
