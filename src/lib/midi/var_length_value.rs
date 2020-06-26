@@ -1,5 +1,5 @@
 use crate::utils::Bounded;
-use binread::io::{Read, Seek, SeekFrom};
+use binread::io::{Read, Seek};
 use binread::{BinRead, BinResult, ReadOptions};
 use serde::{Deserialize, Serialize};
 
