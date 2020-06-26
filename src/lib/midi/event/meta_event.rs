@@ -1,5 +1,6 @@
 use crate::midi::VarLengthValue;
-use binread::BinRead;
+use binread::{BinRead, BinResult, ReadOptions};
+use binread::io::{Read, Seek};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize, BinRead)]
@@ -8,6 +9,38 @@ pub struct MetaEvent {
     length: VarLengthValue,
     #[br(args(meta_type, length))]
     pub variant: MetaEventType,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct TimeSignature {
+    numerator: u8,
+    denominator: u8,
+    clocks_per_metronome: u8,
+    something: u8,
+}
+
+impl BinRead for TimeSignature {
+    type Args = (VarLengthValue,);
+
+    fn read_options<R: Read + Seek>(reader: &mut R, _: &ReadOptions, args: Self::Args) -> BinResult<Self> {
+        if (args.0).0 == 2 {
+            Ok(TimeSignature {
+                numerator: u8::read(reader)?,
+                denominator: u8::read(reader)?,
+                clocks_per_metronome: 24,
+                something: 8,
+            })
+        } else if (args.0).0 == 4 {
+            Ok(TimeSignature {
+                numerator: u8::read(reader)?,
+                denominator: u8::read(reader)?,
+                clocks_per_metronome: u8::read(reader)?,
+                something: u8::read(reader)?,
+            })
+        } else {
+            panic!("Cannot read time signature with length not equal to 2 or 4");
+        }
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize, BinRead)]
@@ -77,7 +110,7 @@ pub enum MetaEventType {
     EndOfTrack,
     #[br(assert(ty == 0x51))]
     Tempo {
-        ms_per_beat: u32,
+        ms_per_beat: [u8; 3],
     },
     #[br(assert(ty == 0x54))]
     SMPTEOffset {
@@ -88,16 +121,16 @@ pub enum MetaEventType {
         ff: u8,
     },
     #[br(assert(ty == 0x58))]
-    TimeSignature {
-        numerator: u8,
-        denominator: u8,
-        clocks_per_metronome: u8,
-        something: u8,
-    },
+    TimeSignature(#[br(args(len))] TimeSignature),
     #[br(assert(ty == 0x59))]
     KeySignature {
         sf: i8,
         mi: u8,
     },
-    Unsupported(#[br(count = len.0)] Vec<u8>),
+    Unsupported {
+        #[br(calc = ty)]
+        ty: u8,
+        #[br(count = len.0)]
+        data: Vec<u8>,
+    },
 }

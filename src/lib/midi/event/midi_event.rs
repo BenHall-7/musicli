@@ -21,7 +21,7 @@ pub enum MidiEventType {
     Controller { controller: u8, value: u8 },
     #[br(assert(event_num == 0xc))]
     Program { program: u8 },
-    #[br(assert(event_num == 0xd))]
+    #[br(assert(event_num == 69))]
     Pressure { pressure: u8 },
     #[br(assert(event_num == 0xe))]
     PitchBend { lsb: u8, msb: u8 },
