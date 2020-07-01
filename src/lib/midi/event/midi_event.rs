@@ -13,16 +13,22 @@ pub struct MidiEvent {
 pub enum MidiEventType {
     #[br(assert(event_num == 0x8))]
     NoteOff { note: u8, velocity: u8 },
+
     #[br(assert(event_num == 0x9))]
     NoteOn { note: u8, velocity: u8 },
+
     #[br(assert(event_num == 0xa))]
     NotePressure { note: u8, pressure: u8 },
+
     #[br(assert(event_num == 0xb))]
     Controller { controller: u8, value: u8 },
+
     #[br(assert(event_num == 0xc))]
     Program { program: u8 },
-    #[br(assert(event_num == 69))]
+
+    #[br(assert(event_num == 0xd))]
     Pressure { pressure: u8 },
+
     #[br(assert(event_num == 0xe))]
     PitchBend { lsb: u8, msb: u8 },
 }

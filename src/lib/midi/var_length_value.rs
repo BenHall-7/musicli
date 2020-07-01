@@ -3,7 +3,9 @@ use binread::io::{Read, Seek};
 use binread::{BinRead, BinResult, ReadOptions};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize, BinRead)]
+#[derive(
+    Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize, BinRead,
+)]
 pub struct VarLengthValue(#[br(parse_with = read)] pub(crate) u32);
 
 fn read<R: Read + Seek>(reader: &mut R, _: &ReadOptions, _: ()) -> BinResult<u32> {

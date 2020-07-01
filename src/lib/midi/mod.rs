@@ -5,6 +5,7 @@ mod timing;
 mod track;
 mod var_length_value;
 
+pub mod constants;
 pub mod event;
 
 pub use file::*;
