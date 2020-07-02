@@ -1,3 +1,5 @@
+use crate::midi::constants::Program;
+use std::convert::TryFrom;
 use binread::io::{Read, Seek};
 use binread::{BinRead, BinResult, ReadOptions};
 use serde::{Deserialize, Serialize};
@@ -24,7 +26,10 @@ pub enum MidiEventType {
     Controller { controller: u8, value: u8 },
 
     #[br(assert(event_num == 0xc))]
-    Program { program: u8 },
+    Program {
+        #[br(map = |v: u8| Program::try_from(v).unwrap())]
+        program: Program
+    },
 
     #[br(assert(event_num == 0xd))]
     Pressure { pressure: u8 },

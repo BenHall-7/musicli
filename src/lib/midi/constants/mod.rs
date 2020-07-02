@@ -1,7 +1,9 @@
 use serde::{Deserialize, Serialize};
+use std::convert::TryFrom;
 
 macro_rules! generate_enum {
     ($first:ident, $($rest:ident),*) => {
+        #[repr(u8)]
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         pub enum Program {
             $first = 0,
@@ -16,6 +18,18 @@ macro_rules! generate_enum {
                 }
             }
         }
+
+        impl TryFrom<u8> for Program {
+            type Error = crate::error::Error;
+
+            fn try_from(f: u8) -> Result<Self, Self::Error> {
+                match f {
+                    f if f == Self::$first as u8 => {Ok(Self::$first)},
+                    $(f if f == Self::$rest as u8 => {Ok(Self::$rest)}),*
+                    _ => Err(crate::error::Error::OutOfBounds("The Program value provided was not in the valid range")),
+                }
+            }
+        } 
     };
 }
 
@@ -25,7 +39,7 @@ macro_rules! get_name {
             .chars()
             .enumerate()
             .map(|(i, c)| match c {
-                'A'..='Z' => {
+                'A'..='Z' | '0'..='9' => {
                     if i > 0 {
                         format!(" {}", c)
                     } else {
