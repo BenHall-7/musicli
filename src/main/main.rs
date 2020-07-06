@@ -1,29 +1,40 @@
-use binread::BinRead;
-use musiclib::error::Error;
-use musiclib::midi::File;
-use serde_yaml::to_string;
-use std::env::args;
-use std::fs::{read, write};
-use std::io::Cursor;
+use tui::layout::{Constraint, Direction, Layout};
+use tui::style::*;
+use tui::{backend::CrosstermBackend, Terminal};
 
-fn main() -> Result<(), Error> {
-    let args: Vec<String> = args().collect();
-    if args.len() > 1 {
-        let filename = &args[1];
-        let mut cursor = Cursor::new(read(filename)?);
-        match File::read(&mut cursor) {
-            Ok(midi) => {
-                let yaml = to_string(&midi).unwrap();
-                write("output.yml", yaml)?;
-                println!("Done!");
-            }
-            Err(e) => {
-                println!("{:#?}", e);
-            }
-        }
-    } else {
-        println!("No args. Needed: <input file>");
+mod state;
+
+use state::{Area, WidgetType};
+
+fn main() {
+    let mut t = Terminal::new(CrosstermBackend::new(std::io::stdout())).unwrap();
+    t.clear().unwrap();
+
+    loop {
+        t.draw(|mut f| {
+            let size = f.size();
+            let layout = Layout::default()
+                .margin(2)
+                .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+                .split(size);
+            let areas = Area::SubArea(vec![
+                (
+                    layout[0],
+                    Area::Widget(WidgetType::List(
+                        vec![String::from("first item"), String::from("second item")],
+                        None,
+                    )),
+                ),
+                (
+                    layout[1],
+                    Area::Widget(WidgetType::Paragraph(
+                        vec![String::from("first item"), String::from("second item")],
+                        None,
+                    )),
+                ),
+            ]);
+            areas.render(&mut f, size)
+        })
+        .unwrap()
     }
-
-    Ok(())
 }

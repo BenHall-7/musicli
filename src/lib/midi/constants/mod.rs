@@ -29,7 +29,7 @@ macro_rules! generate_enum {
                     _ => Err(crate::error::Error::OutOfBounds("The Program value provided was not in the valid range")),
                 }
             }
-        } 
+        }
     };
 }
 

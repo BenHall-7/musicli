@@ -1,8 +1,8 @@
 use crate::midi::constants::Program;
-use std::convert::TryFrom;
 use binread::io::{Read, Seek};
 use binread::{BinRead, BinResult, ReadOptions};
 use serde::{Deserialize, Serialize};
+use std::convert::TryFrom;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct MidiEvent {
@@ -28,7 +28,7 @@ pub enum MidiEventType {
     #[br(assert(event_num == 0xc))]
     Program {
         #[br(map = |v: u8| Program::try_from(v).unwrap())]
-        program: Program
+        program: Program,
     },
 
     #[br(assert(event_num == 0xd))]
