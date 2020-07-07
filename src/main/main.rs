@@ -20,17 +20,20 @@ fn main() {
             let areas = Area::SubArea(vec![
                 (
                     layout[0],
-                    Area::Widget(WidgetType::List(
-                        vec![String::from("first item"), String::from("second item")],
-                        None,
-                    )),
+                    Area::Widget(WidgetType::List(vec![
+                        ("first item".into(), Style::default()),
+                        ("second item".into(), Style::default().fg(Color::Red)),
+                    ])),
                 ),
                 (
                     layout[1],
-                    Area::Widget(WidgetType::Paragraph(
-                        vec![String::from("first item"), String::from("second item")],
-                        None,
-                    )),
+                    Area::Widget(WidgetType::Paragraph(vec![
+                        ("This is a sentence.".into(), Style::default()),
+                        (
+                            "This is another sentence.".into(),
+                            Style::default().bg(Color::Blue),
+                        ),
+                    ])),
                 ),
             ]);
             areas.render(&mut f, size)

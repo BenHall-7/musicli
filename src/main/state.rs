@@ -1,4 +1,4 @@
-use musiclib::midi::File;
+use std::borrow::Cow;
 use tui::backend::Backend;
 use tui::layout::Rect;
 use tui::style::Style;
@@ -7,14 +7,14 @@ use tui::Frame;
 
 // TODO: slice instead of vec.
 // We want all areas to be pre-compiled. Right?
-pub enum Area {
-    Widget(WidgetType),
+pub enum Area<'a> {
+    Widget(WidgetType<'a>),
     // todo: Combine Layout and Vec<Area> into a single struct
     // to better handle possible length mismatches
-    SubArea(Vec<(Rect, Area)>),
+    SubArea(Vec<(Rect, Area<'a>)>),
 }
 
-impl Area {
+impl<'a> Area<'a> {
     pub fn render<B: Backend>(&self, frame: &mut Frame<B>, rect: Rect) {
         match self {
             Area::Widget(widget_type) => widget_type.render(frame, rect),
@@ -25,39 +25,29 @@ impl Area {
     }
 }
 
-pub enum WidgetType {
-    List(Vec<String>, Option<Style>),
-    Paragraph(Vec<String>, Option<Style>),
+pub enum WidgetType<'a> {
+    List(Vec<(Cow<'a, str>, Style)>),
+    Paragraph(Vec<(Cow<'a, str>, Style)>),
     // more...
 }
 
-impl WidgetType {
+impl<'a> WidgetType<'a> {
     pub fn render<B: Backend>(&self, frame: &mut Frame<B>, rect: Rect) {
         match self {
-            WidgetType::List(text, style) => {
+            WidgetType::List(text) => {
                 frame.render_widget(
-                    List::new(text.iter().map(Into::into).map(|s| {
-                        if let Some(style) = style {
-                            Text::Styled(s, *style)
-                        } else {
-                            Text::Raw(s)
-                        }
-                    })),
+                    List::new(
+                        text.iter()
+                            .map(|(s, style)| Text::Styled(s.to_owned(), *style)),
+                    ),
                     rect,
                 );
             }
-            WidgetType::Paragraph(text, style) => {
+            WidgetType::Paragraph(text) => {
                 frame.render_widget(
                     Paragraph::new(
                         text.iter()
-                            .map(Into::into)
-                            .map(|s| {
-                                if let Some(style) = style {
-                                    Text::Styled(s, *style)
-                                } else {
-                                    Text::Raw(s)
-                                }
-                            })
+                            .map(|(s, style)| Text::Styled(s.to_owned(), *style))
                             .collect::<Vec<Text>>() // this is dumb but apparently necessary
                             .iter(),
                     ),
@@ -66,8 +56,4 @@ impl WidgetType {
             }
         }
     }
-}
-
-fn test() {
-    let iterator = [0, 1, 2].iter();
 }
