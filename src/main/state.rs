@@ -1,30 +1,45 @@
 use std::borrow::Cow;
 use tui::backend::Backend;
-use tui::layout::Rect;
+use tui::layout::{Layout, Rect, Constraint};
 use tui::style::Style;
 use tui::widgets::{List, Paragraph, Text};
 use tui::Frame;
 
 // TODO: slice instead of vec.
 // We want all areas to be pre-compiled. Right?
-pub enum Area<'a> {
+#[derive(Debug)]
+pub enum ContainerType<'a> {
     Widget(WidgetType<'a>),
     // todo: Combine Layout and Vec<Area> into a single struct
     // to better handle possible length mismatches
-    SubArea(Vec<(Rect, Area<'a>)>),
+    Divider(Vec<SubArea<'a>>),
 }
 
-impl<'a> Area<'a> {
+impl<'a> ContainerType<'a> {
     pub fn render<B: Backend>(&self, frame: &mut Frame<B>, rect: Rect) {
         match self {
-            Area::Widget(widget_type) => widget_type.render(frame, rect),
-            Area::SubArea(sub_areas) => sub_areas
-                .iter()
-                .for_each(|(rect, sub_area)| sub_area.render(frame, *rect)),
+            ContainerType::Widget(widget_type) => widget_type.render(frame, rect),
+            ContainerType::Divider(sub_areas) => {
+                // this is an OK structure but we may be able to do better
+                let rects = Layout::default()
+                    .constraints(sub_areas.iter().map(|a| a.constraint).collect::<Vec<_>>())
+                    .split(rect);
+                
+                sub_areas.iter().zip(rects).for_each(|(area, rect)| {
+                    area.area.render(frame, rect);
+                })
+            }
         }
     }
 }
 
+#[derive(Debug)]
+pub struct SubArea<'a> {
+    pub constraint: Constraint,
+    pub area: ContainerType<'a>,
+}
+
+#[derive(Debug)]
 pub enum WidgetType<'a> {
     List(Vec<(Cow<'a, str>, Style)>),
     Paragraph(Vec<(Cow<'a, str>, Style)>),

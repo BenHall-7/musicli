@@ -4,7 +4,7 @@ use tui::{backend::CrosstermBackend, Terminal};
 
 mod state;
 
-use state::{Area, WidgetType};
+use state::{ContainerType, SubArea, WidgetType};
 
 fn main() {
     let mut t = Terminal::new(CrosstermBackend::new(std::io::stdout())).unwrap();
@@ -13,28 +13,25 @@ fn main() {
     loop {
         t.draw(|mut f| {
             let size = f.size();
-            let layout = Layout::default()
-                .margin(2)
-                .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
-                .split(size);
-            let areas = Area::SubArea(vec![
-                (
-                    layout[0],
-                    Area::Widget(WidgetType::List(vec![
+            
+            let areas = ContainerType::Divider(vec![
+                SubArea {
+                    area: ContainerType::Widget(WidgetType::List(vec![
                         ("first item".into(), Style::default()),
                         ("second item".into(), Style::default().fg(Color::Red)),
                     ])),
-                ),
-                (
-                    layout[1],
-                    Area::Widget(WidgetType::Paragraph(vec![
+                    constraint: Constraint::Percentage(20)
+                },
+                SubArea {
+                    area: ContainerType::Widget(WidgetType::Paragraph(vec![
                         ("This is a sentence.".into(), Style::default()),
                         (
                             "This is another sentence.".into(),
                             Style::default().bg(Color::Blue),
                         ),
                     ])),
-                ),
+                    constraint: Constraint::Percentage(80)
+                }
             ]);
             areas.render(&mut f, size)
         })
