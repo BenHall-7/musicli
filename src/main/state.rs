@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 use tui::backend::Backend;
-use tui::layout::{Constraint, Layout, Rect};
+use tui::layout::{Constraint, Direction, Layout, Rect};
 use tui::style::Style;
 use tui::widgets::{List, Paragraph, Text};
 use tui::Frame;
@@ -9,19 +9,32 @@ use tui::Frame;
 // We want all areas to be pre-compiled. Right?
 #[derive(Debug)]
 pub enum ContainerType<'a> {
-    Widget(WidgetType<'a>),
+    Widget {
+        widget_type: WidgetType<'a>,
+    },
     // todo: Combine Layout and Vec<Area> into a single struct
     // to better handle possible length mismatches
-    Divider(Vec<SubArea<'a>>),
+    Divider {
+        sub_areas: Vec<SubArea<'a>>,
+        direction: Direction,
+        margin: (u16, u16),
+    },
 }
 
 impl<'a> ContainerType<'a> {
     pub fn render<B: Backend>(&self, frame: &mut Frame<B>, rect: Rect) {
         match self {
-            ContainerType::Widget(widget_type) => widget_type.render(frame, rect),
-            ContainerType::Divider(sub_areas) => {
+            ContainerType::Widget { widget_type } => widget_type.render(frame, rect),
+            ContainerType::Divider {
+                sub_areas,
+                direction,
+                margin,
+            } => {
                 // this is an OK structure but we may be able to do better
                 let rects = Layout::default()
+                    .direction(direction.clone())
+                    .horizontal_margin(margin.0)
+                    .vertical_margin(margin.1)
                     .constraints(sub_areas.iter().map(|a| a.constraint).collect::<Vec<_>>())
                     .split(rect);
 
