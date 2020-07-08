@@ -16,11 +16,11 @@ fn main() {
             let size = f.size();
 
             let areas = ContainerType::Divider {
-                sub_areas: vec![
+                sub_areas: &[
                     SubArea {
                         area: ContainerType::Widget {
                             widget_type: WidgetType::List {
-                                parts: vec![
+                                parts: &[
                                     ("first item".into(), Style::default()),
                                     ("second item".into(), Style::default().fg(Color::Red)),
                                 ],
@@ -32,7 +32,7 @@ fn main() {
                     SubArea {
                         area: ContainerType::Widget {
                             widget_type: WidgetType::Paragraph {
-                                parts: vec![
+                                parts: &[
                                     ("This is a sentence. ".into(), Style::default()),
                                     (
                                         "This is another sentence.".into(),

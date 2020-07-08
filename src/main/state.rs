@@ -15,7 +15,7 @@ pub enum ContainerType<'a> {
     // todo: Combine Layout and Vec<Area> into a single struct
     // to better handle possible length mismatches
     Divider {
-        sub_areas: Vec<SubArea<'a>>,
+        sub_areas: &'a [SubArea<'a>],
         direction: Direction,
         margin: (u16, u16),
     },
@@ -55,11 +55,11 @@ pub struct SubArea<'a> {
 #[derive(Debug)]
 pub enum WidgetType<'a> {
     List {
-        parts: Vec<(Cow<'a, str>, Style)>,
+        parts: &'a [(Cow<'a, str>, Style)],
         style: Style,
     },
     Paragraph {
-        parts: Vec<(Cow<'a, str>, Style)>,
+        parts: &'a [(Cow<'a, str>, Style)],
         style: Style,
     },
     // more...
