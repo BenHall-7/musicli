@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 use tui::backend::Backend;
-use tui::layout::{Layout, Rect, Constraint};
+use tui::layout::{Constraint, Layout, Rect};
 use tui::style::Style;
 use tui::widgets::{List, Paragraph, Text};
 use tui::Frame;
@@ -24,7 +24,7 @@ impl<'a> ContainerType<'a> {
                 let rects = Layout::default()
                     .constraints(sub_areas.iter().map(|a| a.constraint).collect::<Vec<_>>())
                     .split(rect);
-                
+
                 sub_areas.iter().zip(rects).for_each(|(area, rect)| {
                     area.area.render(frame, rect);
                 })
@@ -41,31 +41,41 @@ pub struct SubArea<'a> {
 
 #[derive(Debug)]
 pub enum WidgetType<'a> {
-    List(Vec<(Cow<'a, str>, Style)>),
-    Paragraph(Vec<(Cow<'a, str>, Style)>),
+    List {
+        parts: Vec<(Cow<'a, str>, Style)>,
+        style: Style,
+    },
+    Paragraph {
+        parts: Vec<(Cow<'a, str>, Style)>,
+        style: Style,
+    },
     // more...
 }
 
 impl<'a> WidgetType<'a> {
     pub fn render<B: Backend>(&self, frame: &mut Frame<B>, rect: Rect) {
         match self {
-            WidgetType::List(text) => {
+            WidgetType::List { parts, style } => {
                 frame.render_widget(
                     List::new(
-                        text.iter()
+                        parts
+                            .iter()
                             .map(|(s, style)| Text::Styled(s.to_owned(), *style)),
-                    ),
+                    )
+                    .style(*style),
                     rect,
                 );
             }
-            WidgetType::Paragraph(text) => {
+            WidgetType::Paragraph { parts, style } => {
                 frame.render_widget(
                     Paragraph::new(
-                        text.iter()
+                        parts
+                            .iter()
                             .map(|(s, style)| Text::Styled(s.to_owned(), *style))
                             .collect::<Vec<Text>>() // this is dumb but apparently necessary
                             .iter(),
-                    ),
+                    )
+                    .style(*style),
                     rect,
                 )
             }

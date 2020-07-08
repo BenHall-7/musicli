@@ -13,25 +13,31 @@ fn main() {
     loop {
         t.draw(|mut f| {
             let size = f.size();
-            
+
             let areas = ContainerType::Divider(vec![
                 SubArea {
-                    area: ContainerType::Widget(WidgetType::List(vec![
-                        ("first item".into(), Style::default()),
-                        ("second item".into(), Style::default().fg(Color::Red)),
-                    ])),
-                    constraint: Constraint::Percentage(20)
+                    area: ContainerType::Widget(WidgetType::List {
+                        parts: vec![
+                            ("first item".into(), Style::default()),
+                            ("second item".into(), Style::default().fg(Color::Red)),
+                        ],
+                        style: Style::default().bg(Color::Blue),
+                    }),
+                    constraint: Constraint::Percentage(20),
                 },
                 SubArea {
-                    area: ContainerType::Widget(WidgetType::Paragraph(vec![
-                        ("This is a sentence.".into(), Style::default()),
-                        (
-                            "This is another sentence.".into(),
-                            Style::default().bg(Color::Blue),
-                        ),
-                    ])),
-                    constraint: Constraint::Percentage(80)
-                }
+                    area: ContainerType::Widget(WidgetType::Paragraph {
+                        parts: vec![
+                            ("This is a sentence. ".into(), Style::default()),
+                            (
+                                "This is another sentence.".into(),
+                                Style::default().bg(Color::LightRed),
+                            ),
+                        ],
+                        style: Style::default().bg(Color::Green),
+                    }),
+                    constraint: Constraint::Percentage(80),
+                },
             ]);
             areas.render(&mut f, size)
         })
