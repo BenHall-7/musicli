@@ -1,5 +1,6 @@
 use tui::layout::{Constraint, Direction};
 use tui::style::*;
+use tui::widgets::Borders;
 use tui::{backend::CrosstermBackend, Terminal};
 
 mod state;
@@ -15,22 +16,28 @@ fn main() {
         t.draw(|mut f| {
             let size = f.size();
 
-            let areas = ContainerType::Divider {
+            ContainerType::Divider {
                 sub_areas: &[
                     SubArea {
-                        area: ContainerType::Widget {
-                            widget_type: WidgetType::List {
-                                parts: &[
-                                    ("first item".into(), Style::default()),
-                                    ("second item".into(), Style::default().fg(Color::Red)),
-                                ],
-                                style: Style::default().bg(Color::Blue),
-                            },
+                        component: ContainerType::Border {
+                            block: tui::widgets::Block::default()
+                                .title("Top Block")
+                                .title_style(Style::default().fg(Color::Cyan))
+                                .borders(Borders::ALL),
+                            component: Some(&ContainerType::Widget {
+                                widget_type: WidgetType::List {
+                                    parts: &[
+                                        ("first item".into(), Style::default()),
+                                        ("second item".into(), Style::default().fg(Color::Red)),
+                                    ],
+                                    style: Style::default().bg(Color::Blue),
+                                },
+                            })
                         },
                         constraint: Constraint::Percentage(20),
                     },
                     SubArea {
-                        area: ContainerType::Widget {
+                        component: ContainerType::Widget {
                             widget_type: WidgetType::Paragraph {
                                 parts: &[
                                     ("This is a sentence. ".into(), Style::default()),
@@ -45,10 +52,9 @@ fn main() {
                         constraint: Constraint::Percentage(80),
                     },
                 ],
-                direction: Direction::Horizontal,
-                margin: (2, 0),
-            };
-            areas.render(&mut f, size)
+                direction: Direction::Vertical,
+                margin: (2, 1),
+            }.render(&mut f, size)
         })
         .unwrap()
     }
