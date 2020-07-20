@@ -2,7 +2,7 @@ use std::borrow::Cow;
 use tui::backend::Backend;
 use tui::layout::{Constraint, Direction, Layout, Rect};
 use tui::style::Style;
-use tui::widgets::{Block, List, Paragraph, Text};
+use tui::widgets::{Block, BorderType, Borders, List, Paragraph, Text};
 use tui::Frame;
 
 #[derive(Debug)]
@@ -11,8 +11,8 @@ pub enum ContainerType<'a> {
         widget_type: WidgetType<'a>,
     },
     Border {
-        block: Block<'a>,
-        component: Option<&'a ContainerType<'a>>
+        block_info: BlockInfo<'a>,
+        component: Option<&'a ContainerType<'a>>,
     },
     Divider {
         sub_areas: &'a [SubArea<'a>],
@@ -26,10 +26,20 @@ impl<'a> ContainerType<'a> {
         match self {
             ContainerType::Widget { widget_type } => widget_type.render(frame, rect),
             ContainerType::Border {
-                block,
-                component
+                block_info,
+                component,
             } => {
-                frame.render_widget(*block, rect);
+                let block = if let Some(title) = block_info.title {
+                    Block::default().title(title)
+                } else {
+                    Block::default()
+                }
+                .borders(block_info.borders)
+                .border_type(block_info.border_type)
+                .border_style(block_info.border_style)
+                .title_style(block_info.title_style);
+                // .style(block_info.style)
+                frame.render_widget(block, rect);
                 if let Some(comp) = component {
                     comp.render(frame, block.inner(rect))
                 }
@@ -88,6 +98,19 @@ impl<'a> WidgetType<'a> {
                     rect,
                 );
             }
+            // TODO: Instead of ListState component, pass an optional state into render function?
+            // WidgetType::StatefulList { parts, style, state } => {
+            //     frame.render_stateful_widget(
+            //         List::new(
+            //             parts
+            //                 .iter()
+            //                 .map(|(s, style)| Text::Styled(s.to_owned(), *style)),
+            //         )
+            //         .style(*style),
+            //         rect,
+            //         &mut state.clone()
+            //     )
+            // }
             WidgetType::Paragraph { parts, style } => {
                 frame.render_widget(
                     Paragraph::new(
@@ -102,5 +125,60 @@ impl<'a> WidgetType<'a> {
                 )
             }
         }
+    }
+}
+
+/// a const compatible struct for representing a block
+#[derive(Debug)]
+pub struct BlockInfo<'a> {
+    // Block apparently doesn't use the style property
+    // style: Style,
+    title: Option<&'a str>,
+    title_style: Style,
+    borders: Borders,
+    border_type: BorderType,
+    border_style: Style,
+}
+
+impl<'a> BlockInfo<'a> {
+    pub const fn new() -> Self {
+        Self {
+            // style: Style::new(),
+            title: None,
+            title_style: Style::new(),
+            borders: Borders::NONE,
+            border_type: BorderType::Plain,
+            border_style: Style::new(),
+        }
+    }
+
+    // pub const fn style(mut self, style: Style) -> Self {
+    //     self.style = style;
+    //     self
+    // }
+
+    pub const fn title(mut self, title: &'a str) -> Self {
+        self.title = Some(title);
+        self
+    }
+
+    pub const fn title_style(mut self, title_style: Style) -> Self {
+        self.title_style = title_style;
+        self
+    }
+
+    pub const fn borders(mut self, borders: Borders) -> Self {
+        self.borders = borders;
+        self
+    }
+
+    pub const fn border_type(mut self, border_type: BorderType) -> Self {
+        self.border_type = border_type;
+        self
+    }
+
+    pub const fn border_style(mut self, border_style: Style) -> Self {
+        self.border_style = border_style;
+        self
     }
 }
