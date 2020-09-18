@@ -15,17 +15,17 @@ use serde::{Deserialize, Serialize};
 pub(crate) struct EventWithRet(pub Event, pub Option<u8>);
 
 /// A top-level event struct in a Track, containing a delta time and one of 3 event types
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Event {
     /// The number of Timing units since the last event
-    delta: VarLengthValue,
-    event_type: EventType,
+    pub delta: VarLengthValue,
+    pub event_type: EventType,
 }
 
 #[derive(Debug)]
 pub(crate) struct EventTypeWithRet(pub EventType, pub Option<u8>);
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub enum EventType {
     Midi(MidiEvent),
     Meta(MetaEvent),

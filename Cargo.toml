@@ -13,8 +13,8 @@ name = "musicli"
 path = "src/main/main.rs"
 
 [dependencies]
-binread = "^1"
-crossterm = "^0.13"
-serde = { version = "^1", features = ['derive'] }
-serde_yaml = "^0.8"
-tui = { version = "^0.9.5", default-features = false, features = ['crossterm'] }
+binread = "1"
+crossterm = "0.17"
+serde = { version = "1", features = ['derive'] }
+serde_yaml = "0.8"
+tui = { version = "0.10", default-features = false, features = ['crossterm'] }

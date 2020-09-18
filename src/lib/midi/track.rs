@@ -4,11 +4,11 @@ use binread::Endian::Big;
 use binread::{BinRead, BinReaderExt, BinResult, ReadOptions};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Deserialize, Serialize, BinRead)]
+#[derive(Debug, Clone, Deserialize, Serialize, BinRead)]
 #[br(magic = b"MTrk")]
 pub struct Track {
     #[br(parse_with = read_events)]
-    events: Vec<Event>,
+    pub events: Vec<Event>,
 }
 
 fn read_events<R: Read + Seek>(reader: &mut R, ro: &ReadOptions, _: ()) -> BinResult<Vec<Event>> {

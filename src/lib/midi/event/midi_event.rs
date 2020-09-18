@@ -4,13 +4,13 @@ use binread::{BinRead, BinResult, ReadOptions};
 use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct MidiEvent {
-    channel: u8,
-    event_type: MidiEventType,
+    pub channel: u8,
+    pub event_type: MidiEventType,
 }
 
-#[derive(Debug, Deserialize, Serialize, BinRead)]
+#[derive(Debug, Clone, Deserialize, Serialize, BinRead)]
 #[br(import(event_num: u8))]
 pub enum MidiEventType {
     #[br(assert(event_num == 0x8))]
