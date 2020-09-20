@@ -1,6 +1,7 @@
 use musiclib::midi::Track;
-use musiclib::midi::VarLengthValue;
-use musiclib::midi::event::{Event, EventType, MidiEvent, MidiEventType};
+// use musiclib::midi::VarLengthValue; // use this for horizontal scroll
+use crate::utils::get_note_name;
+use musiclib::midi::event::{EventType, MidiEventType};
 use tui::{widgets::StatefulWidget, layout::Rect, buffer::Buffer, style::Style};
 use std::rc::Rc;
 
@@ -12,25 +13,6 @@ pub struct PianoRollState {
     pub note_number: usize,
     pub vertical_scroll: u32,
     pub horizontal_scroll: u32,
-}
-
-fn get_note_name(note_value: u8) -> String {
-    let octave = note_value / 12;
-    match note_value % 12 {
-        0 => format!("C {}", octave),
-        1 => format!("C# {}", octave),
-        2 => format!("D {}", octave),
-        3 => format!("D# {}", octave),
-        4 => format!("E {}", octave),
-        5 => format!("F {}", octave),
-        6 => format!("F# {}", octave),
-        7 => format!("G {}", octave),
-        8 => format!("G# {}", octave),
-        9 => format!("A {}", octave),
-        10 => format!("A# {}", octave),
-        11 => format!("B {}", octave),
-        _ => unreachable!(),
-    }
 }
 
 impl StatefulWidget for PianoRoll {
@@ -46,7 +28,7 @@ impl StatefulWidget for PianoRoll {
             None
         }).nth(state.note_number);
         if let Some(note) = note {
-            let write = format!("note: {}, velocity: {}", get_note_name(note.0), note.1);
+            let write = format!("note: {}, velocity: {}", get_note_name(note.0, true), note.1);
             buf.set_stringn(
                 area.x,
                 area.y,

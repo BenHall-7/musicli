@@ -8,7 +8,9 @@ use binread::BinRead;
 use musiclib::midi::File;
 
 mod widgets;
-use widgets::{PianoRoll, PianoRollState};
+mod utils;
+
+use widgets::{PianoRoll, PianoRollState, PianoKeys, PianoKeysState};
 
 const BEETHOVEN: &[u8] = include_bytes!("appass_3.mid");
 
@@ -28,7 +30,11 @@ fn main() {
         panic!("Unexpected format")
     };
 
-    let mut state = widgets::PianoRollState {
+    let mut piano_keys_state = PianoKeysState {
+        scroll: 0
+    };
+
+    let mut piano_roll_state = PianoRollState {
         track: std::rc::Rc::new(tracks[1].clone()),
         note_number: 0,
         horizontal_scroll: 0,
@@ -39,9 +45,9 @@ fn main() {
         t.draw(|f| {
             let area = f.size();
             f.render_stateful_widget(
-                PianoRoll,
+                PianoKeys,
                 area,
-                &mut state
+                &mut piano_keys_state
             )
         })
         .unwrap();
@@ -51,12 +57,18 @@ fn main() {
                 Event::Key(k) => {
                     match k.code {
                         KeyCode::Esc => break,
-                        KeyCode::Right => {
-                            state.note_number += 1;
+                        KeyCode::Up => {
+                            piano_keys_state.scroll += 1;
                         }
-                        KeyCode::Left => {
-                            state.note_number -= 1;
+                        KeyCode::Down => {
+                            piano_keys_state.scroll -= 1;
                         }
+                        // KeyCode::Right => {
+                        //     state.note_number += 1;
+                        // }
+                        // KeyCode::Left => {
+                        //     state.note_number -= 1;
+                        // }
                         _ => {}
                     }
                 }
@@ -64,4 +76,6 @@ fn main() {
             }
         }
     }
+
+    t.clear().unwrap()
 }
