@@ -49,8 +49,8 @@ fn timecode_io_metrical() {
     // reading from stream:
     let mut read_stream = Cursor::new(vec![0x3, 0xc0]);
     let timing = Timing::read(&mut read_stream).unwrap();
-    if let Timing::Metrical(value) = timing {
-        assert_eq!(value, 0x3c0);
+    if let Timing::Metrical { precision } = timing {
+        assert_eq!(precision, 0x3c0);
     } else {
         panic!();
     };
@@ -71,9 +71,9 @@ fn timecode_io_smpte() {
     // reading from stream:
     let mut read_stream = Cursor::new(vec![0xe2, 0x50]);
     let timing = Timing::read(&mut read_stream).unwrap();
-    if let Timing::Real(timecode, div) = timing {
-        assert_eq!(timecode, SMPTETimecode::FPS30);
-        assert_eq!(div, 80);
+    if let Timing::Real { fps, precision } = timing {
+        assert_eq!(fps, SMPTETimecode::FPS30);
+        assert_eq!(precision, 80);
     } else {
         panic!();
     };

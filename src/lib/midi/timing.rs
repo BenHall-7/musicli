@@ -7,13 +7,13 @@ use serde::{Deserialize, Serialize};
 // todo: turn the enum comments back into doc comments when the bug is gone from binread
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize)]
 pub enum Timing {
-    /// Indicates a subdivision of quarter notes into a number of pulses.
+    /// Indicates a subdivision of quarter notes.
     /// This timing is affected by tempo tracks, because it depends on the time of a quarter note.
-    Metrical(u16),
+    Metrical { precision: u16 },
     /// Indicates a subdivision of each second into frames.
-    /// A frame is subdivided once again by the second value.
+    /// A frame is subdivided by the second value.
     /// This timing is not affected by tempo tracks.
-    Real(SMPTETimecode, u8),
+    Real { fps: SMPTETimecode, precision: u8 },
 }
 
 impl BinRead for Timing {
@@ -22,13 +22,13 @@ impl BinRead for Timing {
     fn read_options<R: Read + Seek>(reader: &mut R, _: &ReadOptions, _: ()) -> BinResult<Self> {
         let short = reader.read_type::<i16>(Big)?;
         if short > 0 {
-            Ok(Timing::Metrical(short as u16))
+            Ok(Timing::Metrical { precision: short as u16 })
         } else {
             let timecode_amount = -((short >> 8) as i8);
             let timecode = SMPTETimecode::from(timecode_amount as u32)
                 .or_else(|_| Err(Error::from(ErrorKind::InvalidData)))?;
 
-            Ok(Timing::Real(timecode, (short & 0xff) as u8))
+            Ok(Timing::Real { fps: timecode, precision: (short & 0xff) as u8 })
         }
     }
 }
