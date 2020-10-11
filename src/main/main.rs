@@ -1,16 +1,16 @@
-use std::io::{stdout, Write, Cursor};
+use std::{io::{stdout, Write, Cursor}, rc::Rc};
 use std::time::Duration;
-use tui::{backend::CrosstermBackend, buffer::Buffer, layout::Rect, Terminal};
+use tui::{backend::CrosstermBackend, Terminal};
 use crossterm::terminal::SetTitle;
 use crossterm::event::{Event, KeyCode, poll, read};
 use crossterm::{execute};
 use binread::BinRead;
-use musiclib::midi::File;
+use musiclib::midi::{File, Timing};
 
 mod widgets;
 mod utils;
 
-use widgets::{PianoRoll, PianoRollState, PianoKeys, PianoKeysState};
+use widgets::{Piano, PianoState};
 
 const BEETHOVEN: &[u8] = include_bytes!("appass_3.mid");
 
@@ -24,28 +24,30 @@ fn main() {
     
     let mut cursor = Cursor::new(BEETHOVEN);
     let midi = File::read(&mut cursor).unwrap();
+    let precision = if let Timing::Metrical { precision } = midi.timing {
+        precision
+    } else {
+        panic!("Unexpected timing format for this example")
+    };
     let tracks = if let musiclib::midi::Format::MultipleTrack(tracks) = midi.format {
         tracks
     } else {
         panic!("Unexpected format")
     };
 
-    let mut piano_keys_state = PianoKeysState {
-        scroll: 0
-    };
-
-    let mut piano_roll_state = PianoRollState {
-        track: std::rc::Rc::new(tracks[1].clone()),
-        note_number: 0,
-        horizontal_scroll: 0,
-        vertical_scroll: 0,
+    let mut piano_keys_state = PianoState {
+        vscroll: 0,
+        hscroll: 0.into(),
+        track: Rc::new(tracks[1].clone()),
+        channel: 0,
+        precision
     };
 
     loop {
         t.draw(|f| {
             let area = f.size();
             f.render_stateful_widget(
-                PianoKeys,
+                Piano,
                 area,
                 &mut piano_keys_state
             )
@@ -58,10 +60,10 @@ fn main() {
                     match k.code {
                         KeyCode::Esc => break,
                         KeyCode::Up => {
-                            piano_keys_state.scroll += 1;
+                            piano_keys_state.vscroll += 1;
                         }
                         KeyCode::Down => {
-                            piano_keys_state.scroll -= 1;
+                            piano_keys_state.vscroll -= 1;
                         }
                         // KeyCode::Right => {
                         //     state.note_number += 1;

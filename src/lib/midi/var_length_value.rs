@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 #[derive(
     Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize, BinRead,
 )]
-pub struct VarLengthValue(#[br(parse_with = read)] pub(crate) u32);
+pub struct VarLengthValue(#[br(parse_with = read)] pub u32);
 
 fn read<R: Read + Seek>(reader: &mut R, _: &ReadOptions, _: ()) -> BinResult<u32> {
     let mut value = 0u32;
@@ -30,9 +30,9 @@ impl From<u32> for VarLengthValue {
     }
 }
 
-impl Into<u32> for VarLengthValue {
-    fn into(self) -> u32 {
-        self.0
+impl From<VarLengthValue> for u32 {
+    fn from(value: VarLengthValue) -> Self {
+        value.0
     }
 }
 
