@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use musiclib::midi::{Track, VarLengthValue, event::EventType, event::MidiEventType};
+use musiclib::midi::{Track, event::EventType, event::MidiEventType};
 use tui::widgets::{StatefulWidget};
 use tui::layout::Rect;
 use tui::buffer::Buffer;
@@ -14,7 +14,7 @@ pub struct Piano;
 
 pub struct PianoState {
     pub vscroll: u8,
-    pub hscroll: VarLengthValue,
+    pub hscroll: u32,
     pub track: Rc<Track>,
     pub channel: u8,
     pub precision: u16,
@@ -51,8 +51,8 @@ impl StatefulWidget for Piano {
                         if *velocity > 0
                             && *note < note_end
                             && *note >= note_start
-                            && position >= state.hscroll.0
-                            && position < state.hscroll.0 + ((area.width - KEY_WIDTH) as u32 * state.precision as u32) / 4
+                            && position >= state.hscroll
+                            && position < state.hscroll + ((area.width - KEY_WIDTH) as u32 * state.precision as u32) / 4
                         {
                             return Some((position, note, velocity))
                         }
@@ -61,7 +61,7 @@ impl StatefulWidget for Piano {
             }
             return None
         }).for_each(|(time, note, _velocity)| {
-            let x = (time - state.hscroll.0) * 4 / state.precision as u32;
+            let x = (time - state.hscroll) * 4 / state.precision as u32;
             let y = note - state.vscroll;
             buf.set_string(
                 area.x + KEY_WIDTH + x as u16,

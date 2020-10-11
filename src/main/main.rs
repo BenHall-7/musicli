@@ -1,7 +1,7 @@
 use std::{io::{stdout, Write, Cursor}, rc::Rc};
 use std::time::Duration;
 use tui::{backend::CrosstermBackend, Terminal};
-use crossterm::terminal::SetTitle;
+use crossterm::{event::KeyModifiers, terminal::SetTitle};
 use crossterm::event::{Event, KeyCode, poll, read};
 use crossterm::{execute};
 use binread::BinRead;
@@ -37,7 +37,7 @@ fn main() {
 
     let mut piano_keys_state = PianoState {
         vscroll: 0,
-        hscroll: 0.into(),
+        hscroll: 0,
         track: Rc::new(tracks[1].clone()),
         channel: 0,
         precision
@@ -60,17 +60,45 @@ fn main() {
                     match k.code {
                         KeyCode::Esc => break,
                         KeyCode::Up => {
-                            piano_keys_state.vscroll += 1;
+                            let change = if k.modifiers.contains(KeyModifiers::ALT) {
+                                12
+                            } else {
+                                1
+                            };
+                            piano_keys_state.vscroll += change;
                         }
                         KeyCode::Down => {
-                            piano_keys_state.vscroll -= 1;
+                            let change = if k.modifiers.contains(KeyModifiers::ALT) {
+                                12
+                            } else {
+                                1
+                            };
+                            if change > piano_keys_state.vscroll {
+                                piano_keys_state.vscroll = 0;
+                            } else {
+                                piano_keys_state.vscroll -= change;
+                            }
                         }
-                        // KeyCode::Right => {
-                        //     state.note_number += 1;
-                        // }
-                        // KeyCode::Left => {
-                        //     state.note_number -= 1;
-                        // }
+                        KeyCode::Right => {
+                            let change = if k.modifiers.contains(KeyModifiers::ALT) {
+                                precision as u32 * 2
+                            } else {
+                                precision as u32 / 4
+                            };
+                            piano_keys_state.hscroll += change
+                        }
+                        KeyCode::Left => {
+                            let change = if k.modifiers.contains(KeyModifiers::ALT) {
+                                precision as u32 * 2
+                            } else {
+                                precision as u32 / 4
+                            };
+                            if change > piano_keys_state.hscroll {
+                                piano_keys_state.hscroll = 0
+                            } else {
+                                piano_keys_state.hscroll -= change
+                            }
+                        }
                         _ => {}
                     }
                 }
