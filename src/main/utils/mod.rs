@@ -39,6 +39,6 @@ pub fn is_accidental(note_value: u8, tonic: u8) -> bool {
     let note = (note_value - tonic) % 12;
     match note {
         1 | 3 | 6 | 8 | 10 => true,
-        _ => false
+        _ => false,
     }
 }

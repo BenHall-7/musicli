@@ -22,13 +22,18 @@ impl BinRead for Timing {
     fn read_options<R: Read + Seek>(reader: &mut R, _: &ReadOptions, _: ()) -> BinResult<Self> {
         let short = reader.read_type::<i16>(Big)?;
         if short > 0 {
-            Ok(Timing::Metrical { precision: short as u16 })
+            Ok(Timing::Metrical {
+                precision: short as u16,
+            })
         } else {
             let timecode_amount = -((short >> 8) as i8);
             let timecode = SMPTETimecode::from(timecode_amount as u32)
                 .or_else(|_| Err(Error::from(ErrorKind::InvalidData)))?;
 
-            Ok(Timing::Real { fps: timecode, precision: (short & 0xff) as u8 })
+            Ok(Timing::Real {
+                fps: timecode,
+                precision: (short & 0xff) as u8,
+            })
         }
     }
 }

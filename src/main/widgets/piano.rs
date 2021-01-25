@@ -1,16 +1,16 @@
 use std::rc::Rc;
 
-use musiclib::midi::Track;
 use musiclib::midi::event::{Event, EventType, MidiEventType};
-use tui::widgets::{StatefulWidget};
-use tui::layout::Rect;
+use musiclib::midi::Track;
 use tui::buffer::Buffer;
-use tui::style::{Style, Color};
+use tui::layout::Rect;
+use tui::style::{Color, Style};
+use tui::widgets::StatefulWidget;
 
 use crate::utils::{get_note_name, is_accidental};
 
 pub const KEY_WIDTH: u16 = 5;
-pub const CURRENT_EVENT_WIDTH: u16 = 15;
+// pub const CURRENT_EVENT_WIDTH: u16 = 15;
 
 pub struct Piano;
 
@@ -48,12 +48,7 @@ impl StatefulWidget for Piano {
             } else {
                 Style::default().bg(Color::White).fg(Color::Black)
             };
-            let area = Rect::new(
-                area.x, 
-                area.y + position as u16,
-                KEY_WIDTH,
-                1
-            );
+            let area = Rect::new(area.x, area.y + position as u16, KEY_WIDTH, 1);
             buf.set_style(area, style);
             buf.set_string(area.x, area.y, get_note_name(note_value, true), style);
         }
@@ -75,7 +70,7 @@ impl StatefulWidget for Piano {
                                             area.x + KEY_WIDTH,
                                             area.y,
                                             "^^^",
-                                            Style::default().bg(Color::Green)
+                                            Style::default().bg(Color::Green),
                                         );
                                     } else if note_start > 0 && note < note_start + 1 {
                                         // if there's a note below the range
@@ -83,14 +78,16 @@ impl StatefulWidget for Piano {
                                             area.x + KEY_WIDTH,
                                             area.y + area.height - 1,
                                             "vvv",
-                                            Style::default().bg(Color::Green)
+                                            Style::default().bg(Color::Green),
                                         );
                                     } else {
                                         buf.set_string(
                                             area.x + KEY_WIDTH,
-                                            area.y + area.height - 1 - (note - state.vscroll) as u16,
+                                            area.y + area.height
+                                                - 1
+                                                - (note - state.vscroll) as u16,
                                             "   ",
-                                            Style::default().bg(Color::Green)
+                                            Style::default().bg(Color::Green),
                                         );
                                     }
                                 }
@@ -113,9 +110,7 @@ impl PianoState {
     // TODO: match for midi events and the correct channel
     pub fn get_events_at(&self, at: usize) -> &[Event] {
         let to_end = self.track.events.len() - at;
-        let current_size = self
-            .track
-            .events[at + 1..] // this slice to start after the current position
+        let current_size = self.track.events[at + 1..] // this slice to start after the current position
             .iter()
             .position(|v| v.delta.0 > 0)
             .map(|v| v + 1)
@@ -124,19 +119,15 @@ impl PianoState {
     }
 
     pub fn next_group(&self) -> usize {
-        self
-            .track
-            .events[self.hscroll + 1..]
+        self.track.events[self.hscroll + 1..] // this slice to start after the current position
             .iter()
             .position(|v| v.delta.0 > 0)
             .map(|v| v + self.hscroll + 1)
-            .unwrap_or(self.track.events.len())
+            .unwrap_or(self.hscroll) // if no next group, position doesn't change
     }
 
     pub fn prev_group(&self) -> usize {
-        self
-            .track
-            .events[0..self.hscroll] // this slice to end before current position
+        self.track.events[0..self.hscroll] // this slice to end before current position
             .iter()
             .rposition(|v| v.delta.0 > 0)
             .unwrap_or_default()
