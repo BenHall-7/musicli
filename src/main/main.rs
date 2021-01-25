@@ -35,13 +35,7 @@ fn main() {
         panic!("Unexpected format")
     };
 
-    let mut piano_keys_state = PianoState {
-        vscroll: 0,
-        hscroll: 0,
-        track: Rc::new(tracks[1].clone()),
-        channel: 0,
-        precision
-    };
+    let mut piano_keys_state = PianoState::new(&Rc::new(tracks[1].clone()), precision);
 
     loop {
         t.draw(|f| {
@@ -80,24 +74,10 @@ fn main() {
                             }
                         }
                         KeyCode::Right => {
-                            let change = if k.modifiers.contains(KeyModifiers::ALT) {
-                                precision as u32 * 2
-                            } else {
-                                precision as u32 / 4
-                            };
-                            piano_keys_state.hscroll += change
+                            piano_keys_state.hscroll = piano_keys_state.next_group();
                         }
                         KeyCode::Left => {
-                            let change = if k.modifiers.contains(KeyModifiers::ALT) {
-                                precision as u32 * 2
-                            } else {
-                                precision as u32 / 4
-                            };
-                            if change > piano_keys_state.hscroll {
-                                piano_keys_state.hscroll = 0
-                            } else {
-                                piano_keys_state.hscroll -= change
-                            }
+                            piano_keys_state.hscroll = piano_keys_state.prev_group();
                         }
                         _ => {}
                     }

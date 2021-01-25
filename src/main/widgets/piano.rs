@@ -1,6 +1,7 @@
 use std::rc::Rc;
 
-use musiclib::midi::{Track, event::EventType, event::MidiEventType};
+use musiclib::midi::Track;
+use musiclib::midi::event::{Event, EventType, MidiEventType};
 use tui::widgets::{StatefulWidget};
 use tui::layout::Rect;
 use tui::buffer::Buffer;
@@ -8,23 +9,37 @@ use tui::style::{Style, Color};
 
 use crate::utils::{get_note_name, is_accidental};
 
-const KEY_WIDTH: u16 = 5;
+pub const KEY_WIDTH: u16 = 5;
+pub const CURRENT_EVENT_WIDTH: u16 = 15;
 
 pub struct Piano;
 
 pub struct PianoState {
     pub vscroll: u8,
-    pub hscroll: u32,
+    pub hscroll: usize,
     pub track: Rc<Track>,
     pub channel: u8,
     pub precision: u16,
     // active notes can be shown somehow...
 }
 
+impl PianoState {
+    pub fn new(track: &Rc<Track>, precision: u16) -> Self {
+        PianoState {
+            vscroll: 0,
+            hscroll: 0,
+            track: track.clone(),
+            channel: 0,
+            precision,
+        }
+    }
+}
+
 impl StatefulWidget for Piano {
     type State = PianoState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        // draw the vertical keyboard
         let note_start = state.vscroll;
         let note_end = state.vscroll + area.height as u8;
         for (position, note_value) in (note_start..note_end).rev().enumerate() {
@@ -42,33 +57,88 @@ impl StatefulWidget for Piano {
             buf.set_style(area, style);
             buf.set_string(area.x, area.y, get_note_name(note_value, true), style);
         }
-        let mut position: u32 = 0;
-        state.track.events.iter().filter_map(|e| {
-            position = position + e.delta.0;
-            if let EventType::Midi(m) = &e.event_type {
-                if m.channel == state.channel {
-                    if let MidiEventType::NoteOn { note, velocity } = &m.event_type {
-                        if *velocity > 0
-                            && *note < note_end
-                            && *note >= note_start
-                            && position >= state.hscroll
-                            && position < state.hscroll + ((area.width - KEY_WIDTH) as u32 * state.precision as u32) / 4
-                        {
-                            return Some((position, note, velocity))
+
+        // draw the notes on the horizontal view
+        // TODO: repeat process for future events until we can't fit them on screen
+
+        for ev in state.get_current_events() {
+            match &ev.event_type {
+                // render MIDI events in the keyboard
+                EventType::Midi(m) => {
+                    if m.channel == state.channel {
+                        match m.event_type {
+                            MidiEventType::NoteOn { note, velocity } => {
+                                if velocity > 0 {
+                                    if note_end < 0xff && note >= note_end - 1 {
+                                        // if there's a note above the range
+                                        buf.set_string(
+                                            area.x + KEY_WIDTH,
+                                            area.y,
+                                            "^^^",
+                                            Style::default().bg(Color::Green)
+                                        );
+                                    } else if note_start > 0 && note < note_start + 1 {
+                                        // if there's a note below the range
+                                        buf.set_string(
+                                            area.x + KEY_WIDTH,
+                                            area.y + area.height - 1,
+                                            "vvv",
+                                            Style::default().bg(Color::Green)
+                                        );
+                                    } else {
+                                        buf.set_string(
+                                            area.x + KEY_WIDTH,
+                                            area.y + area.height - 1 - (note - state.vscroll) as u16,
+                                            "   ",
+                                            Style::default().bg(Color::Green)
+                                        );
+                                    }
+                                }
+                            }
+                            _ => {}
                         }
                     }
-                }   
+                }
+                _ => {}
             }
-            return None
-        }).for_each(|(time, note, _velocity)| {
-            let x = (time - state.hscroll) * 4 / state.precision as u32;
-            let y = note - state.vscroll;
-            buf.set_string(
-                area.x + KEY_WIDTH + x as u16,
-                area.y + area.height - 1 - y as u16,
-                "■",
-                Style::default().fg(Color::Green)
-            );
-        });
+        }
+    }
+}
+
+impl PianoState {
+    pub fn get_current_events(&self) -> &[Event] {
+        self.get_events_at(self.hscroll)
+    }
+
+    // TODO: match for midi events and the correct channel
+    pub fn get_events_at(&self, at: usize) -> &[Event] {
+        let to_end = self.track.events.len() - at;
+        let current_size = self
+            .track
+            .events[at + 1..] // this slice to start after the current position
+            .iter()
+            .position(|v| v.delta.0 > 0)
+            .map(|v| v + 1)
+            .unwrap_or(to_end);
+        &self.track.events[at..at + current_size]
+    }
+
+    pub fn next_group(&self) -> usize {
+        self
+            .track
+            .events[self.hscroll + 1..]
+            .iter()
+            .position(|v| v.delta.0 > 0)
+            .map(|v| v + self.hscroll + 1)
+            .unwrap_or(self.track.events.len())
+    }
+
+    pub fn prev_group(&self) -> usize {
+        self
+            .track
+            .events[0..self.hscroll] // this slice to end before current position
+            .iter()
+            .rposition(|v| v.delta.0 > 0)
+            .unwrap_or_default()
     }
 }
