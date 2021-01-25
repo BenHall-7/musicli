@@ -21,7 +21,6 @@ const BEETHOVEN: &[u8] = include_bytes!("appass_3.mid");
 fn main() {
     execute!(stdout(), SetTitle("muslici - cli midi editor")).unwrap_or_else(|_| {
         eprintln!("Unable to change title");
-        ()
     });
     let mut t = Terminal::new(CrosstermBackend::new(stdout())).unwrap();
     t.clear().unwrap();
@@ -54,10 +53,18 @@ fn main() {
                     KeyCode::Esc => break,
                     KeyCode::Up => piano_keys_state.vscroll += 1,
                     KeyCode::Down => {
-                        if piano_keys_state.vscroll == 0 {
+                        if piano_keys_state.vscroll < 1 {
                             piano_keys_state.vscroll = 0;
                         } else {
                             piano_keys_state.vscroll -= 1;
+                        }
+                    }
+                    KeyCode::PageUp => piano_keys_state.vscroll += 12,
+                    KeyCode::PageDown => {
+                        if piano_keys_state.vscroll < 12 {
+                            piano_keys_state.vscroll = 0;
+                        } else {
+                            piano_keys_state.vscroll -= 12;
                         }
                     }
                     KeyCode::Right => {
