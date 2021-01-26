@@ -51,22 +51,10 @@ fn main() {
             match read().unwrap() {
                 Event::Key(k) => match k.code {
                     KeyCode::Esc => break,
-                    KeyCode::Up => piano_keys_state.vscroll += 1,
-                    KeyCode::Down => {
-                        if piano_keys_state.vscroll < 1 {
-                            piano_keys_state.vscroll = 0;
-                        } else {
-                            piano_keys_state.vscroll -= 1;
-                        }
-                    }
-                    KeyCode::PageUp => piano_keys_state.vscroll += 12,
-                    KeyCode::PageDown => {
-                        if piano_keys_state.vscroll < 12 {
-                            piano_keys_state.vscroll = 0;
-                        } else {
-                            piano_keys_state.vscroll -= 12;
-                        }
-                    }
+                    KeyCode::Up => piano_keys_state.vscroll_by(1),
+                    KeyCode::Down => piano_keys_state.vscroll_by(-1),
+                    KeyCode::PageUp => piano_keys_state.vscroll_by(12),
+                    KeyCode::PageDown => piano_keys_state.vscroll_by(-12),
                     KeyCode::Right => {
                         piano_keys_state.hscroll = piano_keys_state.next_group();
                     }

@@ -9,8 +9,9 @@ use tui::widgets::StatefulWidget;
 
 use crate::utils::{get_note_name, is_accidental};
 
-pub const KEY_WIDTH: u16 = 5;
-// pub const CURRENT_EVENT_WIDTH: u16 = 15;
+pub const KEY_WIDTH: u16 = 6;
+pub const CURRENT_EVENT_WIDTH: u16 = 12;
+pub const NEXT_EVENT_WIDTH: u16 = 4;
 
 pub struct Piano;
 
@@ -55,8 +56,47 @@ impl StatefulWidget for Piano {
 
         // draw the notes on the horizontal view
         // TODO: repeat process for future events until we can't fit them on screen
+        let mut note_area = area;
+        note_area.x += KEY_WIDTH;
+        note_area.width -= KEY_WIDTH;
+        let mut event_marker = state.hscroll;
+        let mut events = state.get_events_at(event_marker);
+        self.draw_events(
+            note_area,
+            buf,
+            state,
+            events,
+            true,
+        );
+        note_area.x += CURRENT_EVENT_WIDTH;
+        note_area.width -= CURRENT_EVENT_WIDTH;
+        event_marker += events.len();
 
-        for ev in state.get_current_events() {
+        while note_area.x <= area.right() - NEXT_EVENT_WIDTH {
+            events = state.get_events_at(event_marker);
+            if events.len() == 0 {
+                break
+            }
+            self.draw_events(
+                note_area, 
+                buf, 
+                state, 
+                events, 
+                false
+            );
+            note_area.x += NEXT_EVENT_WIDTH;
+            note_area.width -= NEXT_EVENT_WIDTH;
+            event_marker += events.len();
+        }
+    }
+}
+
+impl Piano {
+    fn draw_events(&self, area: Rect, buf: &mut Buffer, state: &PianoState, events: &[Event], detailed: bool) {
+        let note_start = state.vscroll;
+        let note_end = state.vscroll + area.height as u8;
+
+        for ev in events {
             match &ev.event_type {
                 // render MIDI events in the keyboard
                 EventType::Midi(m) => {
@@ -67,27 +107,27 @@ impl StatefulWidget for Piano {
                                     if note_end < 0xff && note >= note_end - 1 {
                                         // if there's a note above the range
                                         buf.set_string(
-                                            area.x + KEY_WIDTH,
+                                            area.x,
                                             area.y,
-                                            "^^^",
+                                            r" /\ ",
                                             Style::default().bg(Color::Green),
                                         );
                                     } else if note_start > 0 && note < note_start + 1 {
                                         // if there's a note below the range
                                         buf.set_string(
-                                            area.x + KEY_WIDTH,
+                                            area.x,
                                             area.y + area.height - 1,
-                                            "vvv",
+                                            r" \/ ",
                                             Style::default().bg(Color::Green),
                                         );
                                     } else {
                                         buf.set_string(
-                                            area.x + KEY_WIDTH,
+                                            area.x,
                                             area.y + area.height
                                                 - 1
                                                 - (note - state.vscroll) as u16,
-                                            "   ",
-                                            Style::default().bg(Color::Green),
+                                            format!("{: >4}", velocity),
+                                            Style::default().fg(Color::Black).bg(Color::Green),
                                         );
                                     }
                                 }
@@ -131,5 +171,16 @@ impl PianoState {
             .iter()
             .rposition(|v| v.delta.0 > 0)
             .unwrap_or_default()
+    }
+
+    pub fn vscroll_by(&mut self, by: i16) {
+        let to = self.vscroll as i16 + by;
+        if to < 0 {
+            self.vscroll = 0;
+        } else if to > 127 {
+            self.vscroll = 127;
+        } else {
+            self.vscroll = to as u8;
+        }
     }
 }
