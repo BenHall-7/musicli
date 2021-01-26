@@ -58,22 +58,31 @@ impl StatefulWidget for Piano {
         // TODO: repeat process for future events until we can't fit them on screen
         let mut note_area = area;
         note_area.x += KEY_WIDTH;
-        note_area.width -= KEY_WIDTH;
+        note_area.width = CURRENT_EVENT_WIDTH;
         let mut event_marker = state.hscroll;
         let mut events = state.get_events_at(event_marker);
+        let mut background = false;
+
+        macro_rules! advance {
+            () => {
+                note_area.x += note_area.width;
+                note_area.width = NEXT_EVENT_WIDTH;
+                event_marker += events.len();
+                events = state.get_events_at(event_marker);
+                background = !background;
+            }
+        }
+
         self.draw_events(
             note_area,
             buf,
             state,
             events,
             true,
+            background
         );
-        note_area.x += CURRENT_EVENT_WIDTH;
-        note_area.width -= CURRENT_EVENT_WIDTH;
-        event_marker += events.len();
-
+        advance!();
         while note_area.x <= area.right() - NEXT_EVENT_WIDTH {
-            events = state.get_events_at(event_marker);
             if events.len() == 0 {
                 break
             }
@@ -82,17 +91,20 @@ impl StatefulWidget for Piano {
                 buf, 
                 state, 
                 events, 
-                false
+                false,
+                background
             );
-            note_area.x += NEXT_EVENT_WIDTH;
-            note_area.width -= NEXT_EVENT_WIDTH;
-            event_marker += events.len();
+            advance!();
         }
     }
 }
 
 impl Piano {
-    fn draw_events(&self, area: Rect, buf: &mut Buffer, state: &PianoState, events: &[Event], detailed: bool) {
+    fn draw_events(&self, area: Rect, buf: &mut Buffer, state: &PianoState, events: &[Event], detailed: bool, background: bool) {
+        if background {
+            buf.set_style(area, Style::default().bg(Color::Rgb(20, 20, 20)))
+        }
+
         let note_start = state.vscroll;
         let note_end = state.vscroll + area.height as u8;
 
@@ -143,10 +155,6 @@ impl Piano {
 }
 
 impl PianoState {
-    pub fn get_current_events(&self) -> &[Event] {
-        self.get_events_at(self.hscroll)
-    }
-
     // TODO: match for midi events and the correct channel
     pub fn get_events_at(&self, at: usize) -> &[Event] {
         let to_end = self.track.events.len() - at;
