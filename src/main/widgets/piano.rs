@@ -70,37 +70,31 @@ impl StatefulWidget for Piano {
                 event_marker += events.len();
                 events = state.get_events_at(event_marker);
                 background = !background;
-            }
+            };
         }
 
-        self.draw_events(
-            note_area,
-            buf,
-            state,
-            events,
-            true,
-            background
-        );
+        self.draw_events(note_area, buf, state, events, true, background);
         advance!();
         while note_area.x <= area.right() - NEXT_EVENT_WIDTH {
             if events.len() == 0 {
-                break
+                break;
             }
-            self.draw_events(
-                note_area, 
-                buf, 
-                state, 
-                events, 
-                false,
-                background
-            );
+            self.draw_events(note_area, buf, state, events, false, background);
             advance!();
         }
     }
 }
 
 impl Piano {
-    fn draw_events(&self, area: Rect, buf: &mut Buffer, state: &PianoState, events: &[Event], detailed: bool, background: bool) {
+    fn draw_events(
+        &self,
+        area: Rect,
+        buf: &mut Buffer,
+        state: &PianoState,
+        events: &[Event],
+        detailed: bool,
+        background: bool,
+    ) {
         if background {
             buf.set_style(area, Style::default().bg(Color::Rgb(20, 20, 20)))
         }
