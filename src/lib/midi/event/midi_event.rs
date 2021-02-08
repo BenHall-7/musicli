@@ -13,28 +13,28 @@ pub struct MidiEvent {
 #[derive(Debug, Clone, Deserialize, Serialize, BinRead)]
 #[br(import(event_num: u8))]
 pub enum MidiEventType {
-    #[br(assert(event_num == 0x8))]
+    #[br(pre_assert(event_num == 0x8))]
     NoteOff { note: u8, velocity: u8 },
 
-    #[br(assert(event_num == 0x9))]
+    #[br(pre_assert(event_num == 0x9))]
     NoteOn { note: u8, velocity: u8 },
 
-    #[br(assert(event_num == 0xa))]
+    #[br(pre_assert(event_num == 0xa))]
     NotePressure { note: u8, pressure: u8 },
 
-    #[br(assert(event_num == 0xb))]
+    #[br(pre_assert(event_num == 0xb))]
     Controller { controller: u8, value: u8 },
 
-    #[br(assert(event_num == 0xc))]
+    #[br(pre_assert(event_num == 0xc))]
     Program {
         #[br(map = |v: u8| Program::try_from(v).unwrap())]
         program: Program,
     },
 
-    #[br(assert(event_num == 0xd))]
+    #[br(pre_assert(event_num == 0xd))]
     Pressure { pressure: u8 },
 
-    #[br(assert(event_num == 0xe))]
+    #[br(pre_assert(event_num == 0xe))]
     PitchBend { lsb: u8, msb: u8 },
 }
 

@@ -24,76 +24,76 @@ pub struct TimeSignature {
 #[derive(Debug, Clone, Deserialize, Serialize, BinRead)]
 #[br(import(ty: u8, len: VarLengthValue))]
 pub enum MetaEventType {
-    #[br(assert(ty == 0))]
+    #[br(pre_assert(ty == 0))]
     SequenceNumber(#[br(if(len.0 == 2))] Option<u16>),
-    #[br(assert(ty == 1))]
+    #[br(pre_assert(ty == 1))]
     Text(
         #[br(count = len.0)]
         #[br(map = |v: Vec<u8>| String::from_utf8_lossy(&v).to_string())]
         String,
     ),
-    #[br(assert(ty == 2))]
+    #[br(pre_assert(ty == 2))]
     Copyright(
         #[br(count = len.0)]
         #[br(map = |v: Vec<u8>| String::from_utf8_lossy(&v).to_string())]
         String,
     ),
-    #[br(assert(ty == 3))]
+    #[br(pre_assert(ty == 3))]
     TrackName(
         #[br(count = len.0)]
         #[br(map = |v: Vec<u8>| String::from_utf8_lossy(&v).to_string())]
         String,
     ),
-    #[br(assert(ty == 4))]
+    #[br(pre_assert(ty == 4))]
     Instrument(
         #[br(count = len.0)]
         #[br(map = |v: Vec<u8>| String::from_utf8_lossy(&v).to_string())]
         String,
     ),
-    #[br(assert(ty == 5))]
+    #[br(pre_assert(ty == 5))]
     Lyric(
         #[br(count = len.0)]
         #[br(map = |v: Vec<u8>| String::from_utf8_lossy(&v).to_string())]
         String,
     ),
-    #[br(assert(ty == 6))]
+    #[br(pre_assert(ty == 6))]
     Marker(
         #[br(count = len.0)]
         #[br(map = |v: Vec<u8>| String::from_utf8_lossy(&v).to_string())]
         String,
     ),
-    #[br(assert(ty == 7))]
+    #[br(pre_assert(ty == 7))]
     CuePoint(
         #[br(count = len.0)]
         #[br(map = |v: Vec<u8>| String::from_utf8_lossy(&v).to_string())]
         String,
     ),
-    #[br(assert(ty == 8))]
+    #[br(pre_assert(ty == 8))]
     ProgramName(
         #[br(count = len.0)]
         #[br(map = |v: Vec<u8>| String::from_utf8_lossy(&v).to_string())]
         String,
     ),
-    #[br(assert(ty == 9))]
+    #[br(pre_assert(ty == 9))]
     DeviceName(
         #[br(count = len.0)]
         #[br(map = |v: Vec<u8>| String::from_utf8_lossy(&v).to_string())]
         String,
     ),
-    #[br(assert(ty == 0x20))]
+    #[br(pre_assert(ty == 0x20))]
     MidiChannelPrefix(u8),
-    #[br(assert(ty == 0x21))]
+    #[br(pre_assert(ty == 0x21))]
     MidiPort(u8),
-    #[br(assert(ty == 0x2f))]
+    #[br(pre_assert(ty == 0x2f))]
     EndOfTrack,
-    #[br(assert(ty == 0x51))]
+    #[br(pre_assert(ty == 0x51))]
     Tempo {
         #[br(map = |v: [u8; 3]|
             ((v[0] as u32) << 16) | ((v[1] as u32) << 8) | (v[2] as u32)
         )]
         ms_per_beat: u32,
     },
-    #[br(assert(ty == 0x54))]
+    #[br(pre_assert(ty == 0x54))]
     SMPTEOffset {
         hours: u8,
         minutes: u8,
@@ -101,9 +101,9 @@ pub enum MetaEventType {
         fr: u8,
         ff: u8,
     },
-    #[br(assert(ty == 0x58))]
+    #[br(pre_assert(ty == 0x58))]
     TimeSignature(#[br(args(len))] TimeSignature),
-    #[br(assert(ty == 0x59))]
+    #[br(pre_assert(ty == 0x59))]
     KeySignature { sf: i8, mi: u8 },
     Unsupported {
         #[br(calc = ty)]
