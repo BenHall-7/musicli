@@ -4,9 +4,9 @@ use musiclib::midi::{File, Format};
 use std::io::Cursor;
 use std::path::PathBuf;
 use tui::buffer::Buffer;
-use tui::layout::{Constraint, Direction, Layout, Rect};
+use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Modifier, Style};
-use tui::widgets::{Block, Borders, Widget};
+use tui::widgets::{Block, Borders, Paragraph, Widget};
 
 const BEETHOVEN: &[u8] = include_bytes!("appass_3.mid");
 
@@ -49,13 +49,29 @@ impl Component for App {
                     .borders(Borders::ALL)
                     .border_style(Style::default().fg(Color::Blue).add_modifier(Modifier::DIM));
                 let inner = block.inner(rect);
+                block.render(rect, buf);
+                let text = Paragraph::new(
+                    "Welcome to musicli! Use the h key for a context-specific help menu (TODO)",
+                )
+                .style(
+                    Style::default()
+                        .bg(Color::Blue)
+                        .add_modifier(Modifier::BOLD),
+                )
+                .alignment(Alignment::Center);
+                let mut text_area = inner;
+                text_area.width /= 2;
+                text_area.height /= 2;
+                text_area.x += (inner.width as f32 / 4.0) as u16;
+                text_area.y += (inner.height as f32 / 4.0) as u16;
+                text.render(text_area, buf);
             }
             App::Loading(search) => search.draw(rect, buf),
             App::Loaded(loaded) => {
                 // TODO: should I put the Piano in here to avoid my lifetime annotation,
                 // or in the actual struct?
                 if let Format::MultipleTrack(tracks) = &loaded.midi.format {
-                    let mut piano = Piano::new(&tracks[0]);
+                    let mut piano = Piano::new(&tracks[1]);
                     piano.draw(rect, buf);
                 } else {
                     panic!("Built in midi file is in the wrong format. Replace this problem later")
