@@ -1,23 +1,20 @@
+use std::io::{stdout, Write};
 use std::time::Duration;
-use std::{
-    io::{stdout, Cursor, Write},
-    rc::Rc,
-};
 
-use binread::BinRead;
 use crossterm::event::{poll, read, Event, KeyCode};
 use crossterm::execute;
-use crossterm::terminal::{SetTitle, EnterAlternateScreen, LeaveAlternateScreen, enable_raw_mode, disable_raw_mode};
-use musiclib::midi::{File, Timing};
-use tui::{backend::CrosstermBackend, Terminal};
+use crossterm::terminal::{
+    disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen, SetTitle,
+};
+use tui::backend::{Backend, CrosstermBackend};
+use tui::terminal::Frame;
+use tui::Terminal;
 
+mod comp;
 mod error;
 mod utils;
-mod widgets;
 
-use widgets::{Piano, PianoState};
-
-const BEETHOVEN: &[u8] = include_bytes!("appass_3.mid");
+use comp::*;
 
 fn main() -> Result<(), error::AppError> {
     execute!(
@@ -29,25 +26,12 @@ fn main() -> Result<(), error::AppError> {
     let mut t = Terminal::new(CrosstermBackend::new(stdout())).unwrap();
     t.clear().unwrap();
 
-    let mut cursor = Cursor::new(BEETHOVEN);
-    let midi = File::read(&mut cursor).unwrap();
-    let precision = if let Timing::Metrical { precision } = midi.timing {
-        precision
-    } else {
-        panic!("Unexpected timing format for this example")
-    };
-    let tracks = if let musiclib::midi::Format::MultipleTrack(tracks) = midi.format {
-        tracks
-    } else {
-        panic!("Unexpected format")
-    };
-
-    let mut piano_keys_state = PianoState::new(&Rc::new(tracks[1].clone()), precision);
+    let mut app = App::new();
 
     loop {
-        t.draw(|f| {
-            let area = f.size();
-            f.render_stateful_widget(Piano, area, &mut piano_keys_state)
+        t.draw(|mut f| {
+            let size = f.size();
+            f.render_stateful_widget(Wrapper, size, &mut app);
         })
         .unwrap();
 
@@ -55,16 +39,16 @@ fn main() -> Result<(), error::AppError> {
             match read().unwrap() {
                 Event::Key(k) => match k.code {
                     KeyCode::Esc => break,
-                    KeyCode::Up => piano_keys_state.vscroll_by(1),
-                    KeyCode::Down => piano_keys_state.vscroll_by(-1),
-                    KeyCode::PageUp => piano_keys_state.vscroll_by(12),
-                    KeyCode::PageDown => piano_keys_state.vscroll_by(-12),
-                    KeyCode::Right => {
-                        piano_keys_state.hscroll = piano_keys_state.next_group();
-                    }
-                    KeyCode::Left => {
-                        piano_keys_state.hscroll = piano_keys_state.prev_group();
-                    }
+                    // KeyCode::Up => piano_keys_state.vscroll_by(1),
+                    // KeyCode::Down => piano_keys_state.vscroll_by(-1),
+                    // KeyCode::PageUp => piano_keys_state.vscroll_by(12),
+                    // KeyCode::PageDown => piano_keys_state.vscroll_by(-12),
+                    // KeyCode::Right => {
+                    //     piano_keys_state.hscroll = piano_keys_state.next_group();
+                    // }
+                    // KeyCode::Left => {
+                    //     piano_keys_state.hscroll = piano_keys_state.prev_group();
+                    // }
                     _ => {}
                 },
                 _ => {}

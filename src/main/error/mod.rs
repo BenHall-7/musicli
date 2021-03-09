@@ -2,7 +2,7 @@ use crossterm::ErrorKind;
 
 #[derive(Debug)]
 pub enum AppError {
-    CrossTermError(ErrorKind)
+    CrossTermError(ErrorKind),
 }
 
 impl From<ErrorKind> for AppError {
@@ -10,4 +10,3 @@ impl From<ErrorKind> for AppError {
         AppError::CrossTermError(f)
     }
 }
-

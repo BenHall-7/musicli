@@ -1,11 +1,11 @@
 use std::rc::Rc;
 
+use super::Component;
 use musiclib::midi::event::{Event, EventType, MidiEventType};
 use musiclib::midi::Track;
 use tui::buffer::Buffer;
 use tui::layout::Rect;
 use tui::style::{Color, Style};
-use tui::widgets::StatefulWidget;
 
 use crate::utils::{get_note_name, is_accidental};
 
@@ -13,36 +13,30 @@ pub const KEY_WIDTH: u16 = 6;
 pub const CURRENT_EVENT_WIDTH: u16 = 12;
 pub const NEXT_EVENT_WIDTH: u16 = 4;
 
-pub struct Piano;
-
-pub struct PianoState {
+pub struct Piano<'a> {
     pub vscroll: u8,
     pub hscroll: usize,
-    pub track: Rc<Track>,
+    pub track: &'a Track,
     pub channel: u8,
-    pub precision: u16,
     // active notes can be shown somehow...
 }
 
-impl PianoState {
-    pub fn new(track: &Rc<Track>, precision: u16) -> Self {
-        PianoState {
+impl<'a> Piano<'a> {
+    pub fn new(track: &'a Track) -> Self {
+        Self {
             vscroll: 0,
             hscroll: 0,
-            track: track.clone(),
+            track,
             channel: 0,
-            precision,
         }
     }
 }
 
-impl StatefulWidget for Piano {
-    type State = PianoState;
-
-    fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+impl<'a> Component for Piano<'a> {
+    fn draw(&mut self, area: Rect, buf: &mut Buffer) {
         // draw the vertical keyboard
-        let note_start = state.vscroll;
-        let note_end = state.vscroll + area.height as u8;
+        let note_start = self.vscroll;
+        let note_end = self.vscroll + area.height as u8;
         for (position, note_value) in (note_start..note_end).rev().enumerate() {
             let style = if is_accidental(note_value, 0) {
                 Style::default().bg(Color::Black).fg(Color::White)
@@ -55,12 +49,11 @@ impl StatefulWidget for Piano {
         }
 
         // draw the notes on the horizontal view
-        // TODO: repeat process for future events until we can't fit them on screen
         let mut note_area = area;
         note_area.x += KEY_WIDTH;
         note_area.width = CURRENT_EVENT_WIDTH;
-        let mut event_marker = state.hscroll;
-        let mut events = state.get_events_at(event_marker);
+        let mut event_marker = self.hscroll;
+        let mut events = self.get_events_at(event_marker);
         let mut background = false;
 
         macro_rules! advance {
@@ -68,29 +61,28 @@ impl StatefulWidget for Piano {
                 note_area.x += note_area.width;
                 note_area.width = NEXT_EVENT_WIDTH;
                 event_marker += events.len();
-                events = state.get_events_at(event_marker);
+                events = self.get_events_at(event_marker);
                 background = !background;
             };
         }
 
-        self.draw_events(note_area, buf, state, events, true, background);
+        self.draw_events(note_area, buf, events, true, background);
         advance!();
         while note_area.x <= area.right() - NEXT_EVENT_WIDTH {
             if events.len() == 0 {
                 break;
             }
-            self.draw_events(note_area, buf, state, events, false, background);
+            self.draw_events(note_area, buf, events, false, background);
             advance!();
         }
     }
 }
 
-impl Piano {
+impl<'a> Piano<'a> {
     fn draw_events(
         &self,
         area: Rect,
         buf: &mut Buffer,
-        state: &PianoState,
         events: &[Event],
         detailed: bool,
         background: bool,
@@ -99,14 +91,14 @@ impl Piano {
             buf.set_style(area, Style::default().bg(Color::Rgb(20, 20, 20)))
         }
 
-        let note_start = state.vscroll;
-        let note_end = state.vscroll + area.height as u8;
+        let note_start = self.vscroll;
+        let note_end = self.vscroll + area.height as u8;
 
         for ev in events {
             match &ev.event_type {
                 // render MIDI events in the keyboard
                 EventType::Midi(m) => {
-                    if m.channel == state.channel {
+                    if m.channel == self.channel {
                         match m.event_type {
                             MidiEventType::NoteOn { note, velocity } => {
                                 if velocity > 0 {
@@ -129,9 +121,7 @@ impl Piano {
                                     } else {
                                         buf.set_string(
                                             area.x,
-                                            area.y + area.height
-                                                - 1
-                                                - (note - state.vscroll) as u16,
+                                            area.y + area.height - 1 - (note - self.vscroll) as u16,
                                             format!("{: >4}", velocity),
                                             Style::default().fg(Color::Black).bg(Color::Green),
                                         );
@@ -146,9 +136,7 @@ impl Piano {
             }
         }
     }
-}
 
-impl PianoState {
     // TODO: match for midi events and the correct channel
     pub fn get_events_at(&self, at: usize) -> &[Event] {
         let to_end = self.track.events.len() - at;
