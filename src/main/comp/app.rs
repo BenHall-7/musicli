@@ -1,6 +1,8 @@
-use super::{Component, FileSearch, Piano};
+use super::{Component, Event, FSResponse, FileSearch, Piano};
 use binread::BinRead;
+use crossterm::event::{KeyCode, KeyEvent};
 use musiclib::midi::{File, Format};
+use std::fs::read;
 use std::io::Cursor;
 use std::path::PathBuf;
 use tui::buffer::Buffer;
@@ -8,12 +10,15 @@ use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Modifier, Style};
 use tui::widgets::{Block, Borders, Paragraph, Widget};
 
-const BEETHOVEN: &[u8] = include_bytes!("appass_3.mid");
-
 pub enum App {
     NotLoaded,
     Loading(FileSearch),
     Loaded(LoadedState),
+}
+
+pub enum AppResponse {
+    None,
+    Exit,
 }
 
 pub struct LoadedState {
@@ -29,19 +34,55 @@ pub enum PlayState {
 
 impl App {
     pub fn new() -> App {
-        // temporary workaround until file loading is implemented
-        let mut cursor = Cursor::new(BEETHOVEN);
-        let midi = File::read(&mut cursor).unwrap();
-
-        App::Loaded(LoadedState {
-            play_state: PlayState::Idle,
-            file_path: PathBuf::new(),
-            midi,
-        })
+        App::NotLoaded
     }
 }
 
 impl Component for App {
+    type Response = AppResponse;
+
+    fn handle_event(&mut self, event: Event) -> Self::Response {
+        match self {
+            App::NotLoaded => {
+                if let Event::Key(key_event) = event {
+                    match key_event.code {
+                        KeyCode::Esc => return AppResponse::Exit,
+                        KeyCode::Char(c) => {
+                            if c == 'o' {
+                                *self = App::Loading(FileSearch::new())
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            App::Loading(fs) => {
+                match fs.handle_event(event) {
+                    FSResponse::Exit => *self = App::NotLoaded,
+                    FSResponse::Open(path) => {
+                        let mut cursor = Cursor::new(read(path.clone()).unwrap());
+                        // TODO: handle errors
+                        let midi = File::read(&mut cursor).unwrap();
+                        *self = App::Loaded(LoadedState {
+                            play_state: PlayState::Idle,
+                            file_path: path,
+                            midi,
+                        })
+                    }
+                    FSResponse::None => {}
+                }
+            }
+            App::Loaded(loaded) => {
+                if let Event::Key(key_event) = event {
+                    if let KeyCode::Esc = key_event.code {
+                        return AppResponse::Exit;
+                    }
+                }
+            }
+        }
+        AppResponse::None
+    }
+
     fn draw(&mut self, rect: Rect, buf: &mut Buffer) {
         match self {
             App::NotLoaded => {
@@ -51,7 +92,7 @@ impl Component for App {
                 let inner = block.inner(rect);
                 block.render(rect, buf);
                 let text = Paragraph::new(
-                    "Welcome to musicli! Use the h key for a context-specific help menu (TODO)",
+                    "Welcome to musicli! Open a file with the 'o' key to get started",
                 )
                 .style(
                     Style::default()

@@ -36,22 +36,15 @@ fn main() -> Result<(), error::AppError> {
         .unwrap();
 
         if poll(Duration::from_millis(0)).unwrap() {
-            match read().unwrap() {
-                Event::Key(k) => match k.code {
-                    KeyCode::Esc => break,
-                    // KeyCode::Up => piano_keys_state.vscroll_by(1),
-                    // KeyCode::Down => piano_keys_state.vscroll_by(-1),
-                    // KeyCode::PageUp => piano_keys_state.vscroll_by(12),
-                    // KeyCode::PageDown => piano_keys_state.vscroll_by(-12),
-                    // KeyCode::Right => {
-                    //     piano_keys_state.hscroll = piano_keys_state.next_group();
-                    // }
-                    // KeyCode::Left => {
-                    //     piano_keys_state.hscroll = piano_keys_state.prev_group();
-                    // }
-                    _ => {}
-                },
-                _ => {}
+            let event = read().unwrap();
+            let comp_event = match event {
+                Event::Resize(..) => continue,
+                Event::Mouse(m) => comp::Event::Mouse(m),
+                Event::Key(k) => comp::Event::Key(k),
+            };
+            match app.handle_event(comp_event) {
+                AppResponse::Exit => break,
+                AppResponse::None => {}
             }
         }
     }

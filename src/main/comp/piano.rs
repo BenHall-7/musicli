@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use super::Component;
+use super::{Component, Event as CompEvent};
 use musiclib::midi::event::{Event, EventType, MidiEventType};
 use musiclib::midi::Track;
 use tui::buffer::Buffer;
@@ -33,6 +33,10 @@ impl<'a> Piano<'a> {
 }
 
 impl<'a> Component for Piano<'a> {
+    type Response = ();
+
+    fn handle_event(&mut self, _: CompEvent) -> Self::Response {}
+
     fn draw(&mut self, area: Rect, buf: &mut Buffer) {
         // draw the vertical keyboard
         let note_start = self.vscroll;
