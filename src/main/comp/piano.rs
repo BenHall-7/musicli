@@ -1,6 +1,7 @@
 use std::rc::Rc;
 
 use super::{Component, Event as CompEvent};
+use crossterm::event::KeyCode;
 use musiclib::midi::event::{Event, EventType, MidiEventType};
 use musiclib::midi::Track;
 use tui::buffer::Buffer;
@@ -13,16 +14,16 @@ pub const KEY_WIDTH: u16 = 6;
 pub const CURRENT_EVENT_WIDTH: u16 = 12;
 pub const NEXT_EVENT_WIDTH: u16 = 4;
 
-pub struct Piano<'a> {
+pub struct Piano {
     pub vscroll: u8,
     pub hscroll: usize,
-    pub track: &'a Track,
+    pub track: Track,
     pub channel: u8,
     // active notes can be shown somehow...
 }
 
-impl<'a> Piano<'a> {
-    pub fn new(track: &'a Track) -> Self {
+impl Piano {
+    pub fn new(track: Track) -> Self {
         Self {
             vscroll: 0,
             hscroll: 0,
@@ -32,10 +33,30 @@ impl<'a> Piano<'a> {
     }
 }
 
-impl<'a> Component for Piano<'a> {
-    type Response = ();
+pub enum PianoResponse {
+    None,
+    Exit,
+}
 
-    fn handle_event(&mut self, _: CompEvent) -> Self::Response {}
+impl Component for Piano {
+    type Response = PianoResponse;
+
+    fn handle_event(&mut self, event: CompEvent) -> Self::Response {
+        match event {
+            CompEvent::Key(key_event) => match key_event.code {
+                KeyCode::Up => self.vscroll_by(1),
+                KeyCode::Down => self.vscroll_by(-1),
+                KeyCode::PageUp => self.vscroll_by(12),
+                KeyCode::PageDown => self.vscroll_by(-12),
+                KeyCode::Right => self.hscroll = self.next_group(),
+                KeyCode::Left => self.hscroll = self.prev_group(),
+                KeyCode::Esc => return PianoResponse::Exit,
+                _ => {}
+            },
+            CompEvent::Mouse(_) => {}
+        }
+        PianoResponse::None
+    }
 
     fn draw(&mut self, area: Rect, buf: &mut Buffer) {
         // draw the vertical keyboard
@@ -82,7 +103,7 @@ impl<'a> Component for Piano<'a> {
     }
 }
 
-impl<'a> Piano<'a> {
+impl Piano {
     fn draw_events(
         &self,
         area: Rect,

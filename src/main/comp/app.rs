@@ -1,4 +1,4 @@
-use super::{Component, Event, FSResponse, FileSearch, Piano};
+use super::{Component, Event, FSResponse, FileSearch, TVResponse, TrackView};
 use binread::BinRead;
 use crossterm::event::{KeyCode, KeyEvent};
 use musiclib::midi::{File, Format};
@@ -24,7 +24,7 @@ pub enum AppResponse {
 pub struct LoadedState {
     play_state: PlayState,
     file_path: PathBuf,
-    midi: File,
+    track_view: TrackView,
 }
 
 pub enum PlayState {
@@ -66,19 +66,16 @@ impl Component for App {
                         *self = App::Loaded(LoadedState {
                             play_state: PlayState::Idle,
                             file_path: path,
-                            midi,
+                            track_view: TrackView::new(midi.format),
                         })
                     }
                     FSResponse::None => {}
                 }
             }
-            App::Loaded(loaded) => {
-                if let Event::Key(key_event) = event {
-                    if let KeyCode::Esc = key_event.code {
-                        return AppResponse::Exit;
-                    }
-                }
-            }
+            App::Loaded(loaded) => match loaded.track_view.handle_event(event) {
+                TVResponse::Exit => *self = App::NotLoaded,
+                TVResponse::None => {}
+            },
         }
         AppResponse::None
     }
@@ -108,16 +105,7 @@ impl Component for App {
                 text.render(text_area, buf);
             }
             App::Loading(search) => search.draw(rect, buf),
-            App::Loaded(loaded) => {
-                // TODO: should I put the Piano in here to avoid my lifetime annotation,
-                // or in the actual struct?
-                if let Format::MultipleTrack(tracks) = &loaded.midi.format {
-                    let mut piano = Piano::new(&tracks[1]);
-                    piano.draw(rect, buf);
-                } else {
-                    panic!("Built in midi file is in the wrong format. Replace this problem later")
-                }
-            }
+            App::Loaded(loaded) => loaded.track_view.draw(rect, buf),
         }
     }
 }
